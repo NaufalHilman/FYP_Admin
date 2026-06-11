@@ -1,0 +1,106 @@
+<!-- views/login.ejs -->
+<div class="container">
+  <form action="/login" method="POST" class="login-form">
+    
+    <!-- Logo -->
+    <img src="/images/main_logo.png" alt="Logo" class="logo">
+
+    <h2 class="login-title">Admin Login</h2>
+
+    <% if (typeof error !== 'undefined') { %>
+        <p class="error-message"><%= error %></p>
+    <% } %>
+    
+    <div class="input-group">
+      <label for="username">Username</label>
+      <input type="text" id="username" name="username" class="input-field" required>
+    </div>
+    
+    <div class="input-group">
+      <label for="password">Password</label>
+      <input type="password" id="password" name="password" class="input-field" required>
+    </div>
+    
+    <button type="submit" class="login-button">Login</button>
+  </form>
+</div>
+
+<style>
+  body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .container {
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    height: 100vh; 
+    font-family: sans-serif; 
+    background-color: #27247B;
+    border-top: 10px solid #FFCB05;
+  }
+
+  .login-form {
+    background: white; 
+    padding: 2rem; 
+    border-radius: 8px; 
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1); 
+    width: 100%; 
+    max-width: 300px;
+  }
+
+  .logo {
+    display: block; 
+    margin: 0 auto 1.5rem auto; 
+    max-width: 150px;
+  }
+
+  .login-title {
+    margin-top: 0; 
+    text-align: center; 
+    color: #333;
+  }
+
+  .error-message {
+    color: red; 
+    text-align: center; 
+    font-size: 0.9rem; 
+    margin-bottom: 1rem;
+  }
+
+  .input-group {
+    margin-bottom: 1rem;
+  }
+
+  .input-group label {
+    display: block; 
+    margin-bottom: 0.5rem; 
+    color: #555;
+  }
+
+  .input-field {
+    width: 100%; 
+    padding: 0.5rem; 
+    border: 1px solid #ccc; 
+    border-radius: 4px; 
+    box-sizing: border-box;
+  }
+
+  .login-button {
+    width: 100%; 
+    padding: 0.75rem; 
+    background-color: #007bff; 
+    color: white; 
+    border: none; 
+    border-radius: 4px; 
+    cursor: pointer; 
+    font-size: 1rem;
+  }
+
+  .login-button:hover {
+    background-color: #0056b3;
+  }
+
+</style>

@@ -1,0 +1,83 @@
+<div class="sidebar">
+    <div class="sidebar-brand">
+        <h2>ARDE Admin</h2>
+    </div>
+    <ul class="sidebar-menu">
+        <li><a href="/dashboard" class="active"><i class="fas fa-home"></i> Dashboard</a></li>
+        <li><a href="/events"><i class="fas fa-calendar-alt"></i> Events</a></li>
+        <li><a href="/careers"><i class="fas fa-briefcase"></i> Careers</a></li>
+        <li><a href="/members"><i class="fas fa-users"></i> Members</a></li>
+        <li><a href="/awards"><i class="fas fa-trophy"></i> Awards</a></li>
+        <li><a href="/contacts"><i class="fas fa-address-book"></i> Contacts</a></li>
+        <li><a href="/enquiries"><i class="fas fa-envelope"></i> Enquiries</a></li>
+    </ul>
+</div>
+
+<style>
+:root {
+    --sidebar-width: 260px;
+    --primary-color: #27247B;     
+    --secondary-color: #FFCB05;    
+    --hover-bg: #353293;          
+    --text-light: #ffffff;
+    --text-muted: #d1d1e0;       
+}
+
+.sidebar {
+    width: var(--sidebar-width);
+    height: 100vh;
+    background-color: var(--primary-color);
+    position: fixed;
+    top: 0;
+    left: 0;
+    display: flex;
+    flex-direction: column;
+    color: var(--text-light);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    box-shadow: 2px 0 5px rgba(0,0,0,0.2); 
+}
+
+.sidebar-brand {
+    padding: 25px 20px;
+    text-align: center;
+    border-bottom: 2px solid var(--secondary-color);
+}
+
+.sidebar-brand h2 {
+    margin: 0;
+    font-size: 22px;
+    letter-spacing: 1px;
+    color: var(--text-light);
+}
+
+.sidebar-menu {
+    list-style: none;
+    padding: 20px 0;
+    margin: 0;
+}
+
+.sidebar-menu li {
+    width: 100%;
+}
+
+.sidebar-menu li a {
+    display: block;
+    padding: 15px 25px;
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 16px;
+    transition: all 0.3s ease;
+    border-left: 4px solid transparent; 
+}
+
+.sidebar-menu li a:hover, 
+.sidebar-menu li a.active {
+    color: var(--text-light);
+    background-color: var(--hover-bg);
+    border-left: 4px solid var(--secondary-color);
+}
+
+.sidebar-menu li a.active i {
+    color: var(--secondary-color);
+}
+</style>
