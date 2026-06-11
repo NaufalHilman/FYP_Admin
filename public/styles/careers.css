@@ -235,6 +235,8 @@ body {
     cursor: pointer;
 }
 
+.btn-remove:hover { background: #c0392b; }
+
 .btn-update {
     background: #27ae60;
     color: #fff;
@@ -246,6 +248,7 @@ body {
     cursor: pointer;
 }
 
+.btn-update:hover { background: #1e8449; }
 /* ── Footer ── */
 .footer-actions {
     display: flex;
@@ -264,16 +267,9 @@ body {
     font-weight: 500;
     cursor: pointer;
 }
-
-.btn-bulk {
+.btn-create:hover {
     background: #27ae60;
     color: #fff;
-    border: none;
-    border-radius: 6px;
-    padding: 9px 20px;
-    font-size: 13px;
-    font-weight: 500;
-    cursor: pointer;
 }
 
 /* ── Job card form spacing ── */
@@ -330,3 +326,5 @@ body {
     font-size: 13px;
     cursor: pointer;
 }
+
+.btn-cancel:hover { background: #f5f5f5; }
