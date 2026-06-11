@@ -3,8 +3,7 @@
         <h2>ARDE Admin</h2>
     </div>
     <ul class="sidebar-menu">
-        <li><a href="/dashboard" class="active"><i class="fas fa-home"></i> Dashboard</a></li>
-        <li><a href="/events"><i class="fas fa-calendar-alt"></i> Events</a></li>
+        <li><a href="/dashboard"><i class="fas fa-home"></i> Dashboard</a></li>        <li><a href="/events"><i class="fas fa-calendar-alt"></i> Events</a></li>
         <li><a href="/careers"><i class="fas fa-briefcase"></i> Careers</a></li>
         <li><a href="/members"><i class="fas fa-users"></i> Members</a></li>
         <li><a href="/awards"><i class="fas fa-trophy"></i> Awards</a></li>
@@ -12,6 +11,16 @@
         <li><a href="/enquiries"><i class="fas fa-envelope"></i> Enquiries</a></li>
     </ul>
 </div>
+
+<script>
+    const links = document.querySelectorAll('.sidebar-menu li a');
+    links.forEach(link => {
+        link.classList.remove('active');
+        if (link.getAttribute('href') === window.location.pathname) {
+            link.classList.add('active');
+        }
+    });
+</script>
 
 <style>
 :root {

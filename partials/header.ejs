@@ -1,8 +1,4 @@
 <div class="top-header">
-    <div class="search-box">
-        <i class="fas fa-search"></i>
-        <input type="text" placeholder="Search data...">
-    </div>
     <div class="admin-profile">
         <div class="profile-info">
             <span class="admin-name">Admin User</span>
@@ -18,7 +14,7 @@
     height: 70px;
     background-color: #ffffff;
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-end;
     align-items: center;
     padding: 0 30px;
     box-shadow: 0 2px 5px rgba(0,0,0,0.05);
@@ -28,28 +24,6 @@
     right: 0;
     left: var(--sidebar-width, 260px); /* Aligns perfectly next to the sidebar */
     z-index: 100;
-}
-
-.search-box {
-    display: flex;
-    align-items: center;
-    background-color: #f8f9fc;
-    padding: 8px 15px;
-    border-radius: 20px;
-    width: 300px;
-}
-
-.search-box i {
-    color: #a3a3c2;
-    margin-right: 10px;
-}
-
-.search-box input {
-    border: none;
-    background: none;
-    outline: none;
-    width: 100%;
-    font-size: 14px;
 }
 
 .admin-profile {
