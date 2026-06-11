@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <!-- Include the Sidebar navigation -->
+    <%- include('../partials/sidebar') %>
+
+    <!-- Include the Top Header bar -->
+    <%- include('../partials/header') %>
+
+    <!-- Main Content Wrapper -->
+    <div class="main-content">
+        <div class="content-header">
+            <h1>Dashboard Overview</h1>
+            <p>Welcome back! Here is what is happening on your guest site today.</p>
+        </div>
+
+        <!-- Placeholder for future SQL Data Cards -->
+        <div class="card-grid">
+            <div class="card">
+                <h3>Active Events</h3>
+                <p class="card-number">0</p>
+            </div>
+            <div class="card">
+                <h3>Recent Announcements</h3>
+                <p class="card-number">0</p>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
+
+<style>
+body {
+    margin: 0;
+    background-color: #f8f9fc;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Shifting the main content area so it does not hide under the fixed sidebar/header */
+.main-content {
+    margin-left: 260px; /* Matches sidebar width */
+    padding: 100px 30px 30px 30px; /* Top padding clears the 70px header */
+    min-height: calc(100vh - 100px);
+}
+
+.content-header h1 {
+    margin: 0 0 10px 0;
+    color: #3a3b45;
+}
+
+.content-header p {
+    margin: 0 0 30px 0;
+    color: #858796;
+}
+
+.card-grid {
+    display: flex;
+    gap: 20px;
+}
+
+.card {
+    background: #ffffff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    flex: 1;
+    border-top: 4px solid #4e73df;
+}
+
+.card h3 {
+    margin: 0 0 10px 0;
+    font-size: 14px;
+    color: #4e73df;
+    text-transform: uppercase;
+}
+
+.card .card-number {
+    margin: 0;
+    font-size: 28px;
+    font-weight: bold;
+    color: #5a5c69;
+}
+</style>
