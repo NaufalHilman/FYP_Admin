@@ -66,8 +66,15 @@ app.post('/login', async (req, res) => {
 });
 
 //Dashboard route
-app.get('/dashboard', isAuthenticated, (req, res) => {
-    res.render('dashboard');
+app.get('/dashboard', isAuthenticated, async (req, res) => {
+    try {
+        const [[{ jobCount }]] = await db.query('SELECT COUNT(*) as jobCount FROM careers');
+        const [[{ appCount }]] = await db.query('SELECT COUNT(*) as appCount FROM applications');
+        res.render('dashboard', { jobCount, appCount });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Server Error');
+    }
 });
 
 app.get('/logout', (req, res) => {
@@ -91,10 +98,41 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
+// Update GET /careers to also fetch applications per job
 app.get('/careers', isAuthenticated, async (req, res) => {
     try {
         const [jobs] = await db.query('SELECT * FROM careers ORDER BY posted_at DESC');
-        res.render('careers', { jobs });
+        const [applications] = await db.query(`
+            SELECT a.*, c.job_title 
+            FROM applications a 
+            JOIN careers c ON a.career_id = c.id 
+            ORDER BY a.submitted_at DESC
+        `);
+        // Count applications per job
+        const [counts] = await db.query(`
+            SELECT career_id, COUNT(*) as count 
+            FROM applications 
+            GROUP BY career_id
+        `);
+        const appCounts = {};
+        counts.forEach(row => appCounts[row.career_id] = row.count);
+
+        res.render('careers', { jobs, applications, appCounts });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Server Error');
+    }
+});
+
+// GET /careers/applications/:id — view applications for one job
+app.get('/careers/applications/:id', isAuthenticated, async (req, res) => {
+    try {
+        const [[job]] = await db.query('SELECT * FROM careers WHERE id = ?', [req.params.id]);
+        const [applications] = await db.query(
+            'SELECT * FROM applications WHERE career_id = ? ORDER BY submitted_at DESC',
+            [req.params.id]
+        );
+        res.render('job-applications', { job, applications });
     } catch (err) {
         console.error(err);
         res.status(500).send('Server Error');
