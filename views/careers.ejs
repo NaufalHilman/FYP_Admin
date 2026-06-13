@@ -27,11 +27,15 @@
                     <div class="stats-label">Available Careers</div>
                 </div>
                 <div class="apps-card">
-                    <h4>Job Listings</h4>
+                    <h4>Applications Received</h4>
                     <% jobs.forEach(job => { %>
                     <div class="app-row">
-                        <span class="app-count"><%= job.id %></span>
-                        <%= job.job_title %>
+                        <span class="app-count <%= (appCounts[job.id] || 0) === 0 ? 'zero' : '' %>">
+                            <%= appCounts[job.id] || 0 %>
+                        </span>
+                        <a href="/careers/applications/<%= job.id %>" style="color:#333; text-decoration:none;">
+                            <%= job.job_title %>
+                        </a>
                     </div>
                     <% }) %>
                 </div>

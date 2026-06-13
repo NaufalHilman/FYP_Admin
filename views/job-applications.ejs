@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Applications — <%= job.job_title %></title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/styles/careers.css">
+</head>
+<body>
+    <%- include('../partials/sidebar') %>
+    <%- include('../partials/header') %>
+
+    <main class="content">
+        <div class="page-header">
+            <h1>Applications — <%= job.job_title %></h1>
+            <a href="/careers" class="btn-back">← Back to Careers</a>
+        </div>
+
+        <% if (applications.length === 0) { %>
+            <p style="color:#777; margin-top:40px;">No applications received yet.</p>
+        <% } else { %>
+        <div class="applications-list">
+            <% applications.forEach(app => { %>
+            <div class="application-card">
+                <div class="applicant-header">
+                    <div class="applicant-avatar">
+                        <%= app.full_name.charAt(0).toUpperCase() %>
+                    </div>
+                    <div>
+                        <h4><%= app.full_name %></h4>
+                        <p><%= app.email %> <% if(app.phone) { %> · <%= app.phone %><% } %></p>
+                    </div>
+                    <span class="app-date">
+                        <%= new Date(app.submitted_at).toLocaleDateString('en-SG', { year:'numeric', month:'short', day:'numeric' }) %>
+                    </span>
+                </div>
+
+                <% if (app.cover_letter) { %>
+                <div class="cover-letter">
+                    <strong>Cover Letter</strong>
+                    <p><%= app.cover_letter %></p>
+                </div>
+                <% } %>
+
+                <% if (app.resume_path) { %>
+                <a href="<%= app.resume_path %>" target="_blank" class="btn-resume">
+                    <i class="fas fa-file-alt"></i> View Resume
+                </a>
+                <% } %>
+            </div>
+            <% }) %>
+        </div>
+        <% } %>
+    </main>
+</body>
+</html>
