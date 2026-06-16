@@ -7,13 +7,17 @@ const cookieSession = require('cookie-session');
 const app = express();
 
 // Middleware — order matters
+app.set('trust proxy', 1);
+
+const isProd = process.env.NODE_ENV === 'production';
+
 app.use(cookieSession({
     name: 'session',
     secret: process.env.SESSION_SECRET,
     maxAge: 24 * 60 * 60 * 1000,
-    secure: true,
+    secure: isProd,
     httpOnly: true,
-    sameSite: 'none'
+    sameSite: 'lax'
 }));
 
 app.use(express.static('public'));
