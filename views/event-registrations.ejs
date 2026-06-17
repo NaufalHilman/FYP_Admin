@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Registrations — <%= event.title %></title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/styles/careers.css">
+    <link rel="stylesheet" href="/styles/applications.css">
+</head>
+<body>
+    <%- include('../partials/sidebar') %>
+    <%- include('../partials/header') %>
+
+    <main class="content">
+        <div class="page-header">
+            <h1>Registrations — <%= event.title %></h1>
+            <a href="/events" class="btn-back"><i class="fas fa-arrow-left"></i> Back to Events</a>
+        </div>
+
+        <div class="job-meta-row">
+            <% if (event.category) { %><span><%= event.category.charAt(0).toUpperCase() + event.category.slice(1) %></span><% } %>
+            <% if (event.location) { %><span><%= event.location %></span><% } %>
+        </div>
+
+        <% if (registrations.length === 0) { %>
+            <div class="no-apps">
+                <i class="fas fa-inbox"></i>
+                <p>No registrations yet.</p>
+            </div>
+        <% } else { %>
+
+        <%
+            const withMessage = registrations.filter(r => r.message && r.message.trim()).length;
+            const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate() - 7);
+            const thisWeek = registrations.filter(r => new Date(r.registered_at) >= weekAgo).length;
+        %>
+        <div class="stats-row">
+            <div class="stat-box">
+                <div class="num"><%= registrations.length %></div>
+                <div class="lbl">Total Registered</div>
+            </div>
+            <div class="stat-box stat-box--gold">
+                <div class="num"><%= withMessage %></div>
+                <div class="lbl">Left a Message</div>
+            </div>
+            <div class="stat-box stat-box--accent">
+                <div class="num"><%= thisWeek %></div>
+                <div class="lbl">This Week</div>
+            </div>
+        </div>
+
+        <div class="applications-list">
+            <% registrations.forEach(reg => { %>
+            <div class="application-card">
+                <div class="applicant-header">
+                    <div class="applicant-avatar"><%= reg.full_name.charAt(0).toUpperCase() %></div>
+                    <div class="applicant-info">
+                        <h4><%= reg.full_name %></h4>
+                        <p>
+                            <i class="fas fa-envelope"></i> <%= reg.email %>
+                            <% if (reg.phone) { %> &nbsp;·&nbsp; <i class="fas fa-phone"></i> <%= reg.phone %><% } %>
+                        </p>
+                    </div>
+                    <span class="app-date">
+                        <%= new Date(reg.registered_at).toLocaleDateString('en-SG', { year:'numeric', month:'short', day:'numeric' }) %>
+                    </span>
+                </div>
+
+                <% if (reg.message) { %>
+                <div class="cover-letter">
+                    <strong><i class="fas fa-quote-left"></i> Message</strong>
+                    <p><%= reg.message %></p>
+                </div>
+                <% } %>
+            </div>
+            <% }) %>
+        </div>
+        <% } %>
+    </main>
+</body>
+</html>
