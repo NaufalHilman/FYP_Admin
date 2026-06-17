@@ -5,6 +5,7 @@
     <title>Applications — <%= job.job_title %></title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/styles/careers.css">
+    <link rel="stylesheet" href="/styles/applications.css">
 </head>
 <body>
     <%- include('../partials/sidebar') %>
@@ -13,12 +14,40 @@
     <main class="content">
         <div class="page-header">
             <h1>Applications — <%= job.job_title %></h1>
-            <a href="/careers" class="btn-back">← Back to Careers</a>
+            <a href="/careers" class="btn-back"><i class="fas fa-arrow-left"></i> Back to Careers</a>        </div>
+
+        <div class="job-meta-row">
+            <% if (job.department) { %><span><%= job.department %></span><% } %>
+            <% if (job.location) { %><span><%= job.location %></span><% } %>
         </div>
 
         <% if (applications.length === 0) { %>
-            <p style="color:#777; margin-top:40px;">No applications received yet.</p>
+            <div class="no-apps">
+                <i class="fas fa-inbox"></i>
+                <p>No applications received yet.</p>
+            </div>
         <% } else { %>
+
+        <% 
+            const withResume = applications.filter(a => a.resume_path).length;
+            const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate() - 7);
+            const thisWeek = applications.filter(a => new Date(a.submitted_at) >= weekAgo).length;
+        %>
+        <div class="stats-row">
+            <div class="stat-box">
+                <div class="num"><%= applications.length %></div>
+                <div class="lbl">Total Applicants</div>
+            </div>
+            <div class="stat-box stat-box--gold">
+                <div class="num"><%= withResume %></div>
+                <div class="lbl">With Resume</div>
+            </div>
+            <div class="stat-box stat-box--accent">
+                <div class="num"><%= thisWeek %></div>
+                <div class="lbl">This Week</div>
+            </div>
+        </div>
+
         <div class="applications-list">
             <% applications.forEach(app => { %>
             <div class="application-card">
@@ -26,9 +55,12 @@
                     <div class="applicant-avatar">
                         <%= app.full_name.charAt(0).toUpperCase() %>
                     </div>
-                    <div>
+                    <div class="applicant-info">
                         <h4><%= app.full_name %></h4>
-                        <p><%= app.email %> <% if(app.phone) { %> · <%= app.phone %><% } %></p>
+                        <p>
+                            <i class="fas fa-envelope"></i> <%= app.email %>
+                            <% if (app.phone) { %> &nbsp;·&nbsp; <i class="fas fa-phone"></i> <%= app.phone %><% } %>
+                        </p>
                     </div>
                     <span class="app-date">
                         <%= new Date(app.submitted_at).toLocaleDateString('en-SG', { year:'numeric', month:'short', day:'numeric' }) %>
@@ -37,16 +69,20 @@
 
                 <% if (app.cover_letter) { %>
                 <div class="cover-letter">
-                    <strong>Cover Letter</strong>
+                    <strong><i class="fas fa-quote-left"></i> Cover Letter</strong>
                     <p><%= app.cover_letter %></p>
                 </div>
                 <% } %>
 
-                <% if (app.resume_path) { %>
-                <a href="<%= app.resume_path %>" target="_blank" class="btn-resume">
-                    <i class="fas fa-file-alt"></i> View Resume
-                </a>
-                <% } %>
+                <div class="card-footer">
+                    <% if (app.resume_path) { %>
+                    <a href="<%= app.resume_path %>" target="_blank" class="btn-resume">
+                        <i class="fas fa-file-alt"></i> View Resume
+                    </a>
+                    <% } else { %>
+                    <span class="no-resume">No resume attached</span>
+                    <% } %>
+                </div>
             </div>
             <% }) %>
         </div>

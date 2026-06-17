@@ -14,9 +14,13 @@
 
 <script>
     const links = document.querySelectorAll('.sidebar-menu li a');
+    const currentPath = window.location.pathname;
+
     links.forEach(link => {
         link.classList.remove('active');
-        if (link.getAttribute('href') === window.location.pathname) {
+        const linkPath = link.getAttribute('href');
+
+        if (currentPath === linkPath || (linkPath !== '/' && currentPath.startsWith(linkPath))) {
             link.classList.add('active');
         }
     });
