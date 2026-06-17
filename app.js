@@ -168,6 +168,84 @@ app.post('/careers/delete/:id', isAuthenticated, async (req, res) => {
     }
 });
 
+// ===== EVENTS =====
+
+app.get('/events', isAuthenticated, async (req, res) => {
+    try {
+        const [events] = await db.query('SELECT * FROM events ORDER BY event_date DESC');
+        const [counts] = await db.query('SELECT event_id, COUNT(*) as count FROM event_registrations GROUP BY event_id');
+        const regCounts = {};
+        counts.forEach(row => regCounts[row.event_id] = row.count);
+        res.render('event', { events, regCounts });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Server Error');
+    }
+});
+
+app.post('/events/create', isAuthenticated, uploadImage.single('image'), async (req, res) => {
+    const { title, category, event_date, location, description, register_link } = req.body;
+    const is_featured = req.body.is_featured ? 1 : 0;
+    const image_path = req.file ? req.file.path : null;
+    try {
+        await db.query(
+            'INSERT INTO events (title, category, event_date, location, description, image_path, register_link, is_featured) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            [title, category, event_date, location, description, image_path, register_link, is_featured]
+        );
+        res.redirect('/events');
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Error creating event');
+    }
+});
+
+app.post('/events/update/:id', isAuthenticated, uploadImage.single('image'), async (req, res) => {
+    const { title, category, event_date, location, description, register_link } = req.body;
+    const is_featured = req.body.is_featured ? 1 : 0;
+    const { id } = req.params;
+    try {
+        if (req.file) {
+            await db.query(
+                'UPDATE events SET title=?, category=?, event_date=?, location=?, description=?, register_link=?, is_featured=?, image_path=? WHERE id=?',
+                [title, category, event_date, location, description, register_link, is_featured, req.file.path, id]
+            );
+        } else {
+            await db.query(
+                'UPDATE events SET title=?, category=?, event_date=?, location=?, description=?, register_link=?, is_featured=? WHERE id=?',
+                [title, category, event_date, location, description, register_link, is_featured, id]
+            );
+        }
+        res.redirect('/events');
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Error updating event');
+    }
+});
+
+app.post('/events/delete/:id', isAuthenticated, async (req, res) => {
+    try {
+        await db.query('DELETE FROM events WHERE id = ?', [req.params.id]);
+        res.redirect('/events');
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Error deleting event');
+    }
+});
+
+app.get('/events/registrations/:id', isAuthenticated, async (req, res) => {
+    try {
+        const [[event]] = await db.query('SELECT * FROM events WHERE id = ?', [req.params.id]);
+        const [registrations] = await db.query(
+            'SELECT * FROM event_registrations WHERE event_id = ? ORDER BY registered_at DESC',
+            [req.params.id]
+        );
+        res.render('event-registrations', { event, registrations });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Server Error');
+    }
+});
+
 if (require.main === module) {
     const PORT = process.env.PORT || 3000;
     app.listen(PORT, () => {
