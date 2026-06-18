@@ -1,0 +1,373 @@
+/* TABS */
+.tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 28px;
+    border-bottom: 2px solid #eef0fb;
+}
+
+.tab-btn {
+    background: none;
+    border: none;
+    padding: 12px 22px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #858796;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s;
+    margin-bottom: -2px;
+}
+
+.tab-btn:hover {
+    color: #27247B;
+}
+
+.tab-btn.active {
+    color: #27247B;
+    border-bottom-color: #27247B;
+}
+
+.tab-panel {
+    display: none;
+}
+
+.tab-panel.active {
+    display: block;
+}
+
+/* PANEL HEADER */
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.panel-header h3 {
+    font-size: 16px;
+    color: #333;
+}
+
+.panel-header-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-add {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #27247B;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-add:hover {
+    background: #1a1860;
+}
+
+.btn-add--secondary {
+    background: #fff;
+    color: #27247B;
+    border: 1px solid #27247B;
+}
+
+.btn-add--secondary:hover {
+    background: #27247B;
+    color: #fff;
+}
+
+/* TABLE (ARDE Members) */
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+}
+
+.admin-table thead th {
+    text-align: left;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #858796;
+    padding: 14px 18px;
+    background: #f8f9fc;
+    border-bottom: 2px solid #eef0fb;
+}
+
+.admin-table tbody td {
+    padding: 14px 18px;
+    font-size: 14px;
+    color: #444;
+    border-bottom: 1px solid #f0f1f9;
+}
+
+.admin-table tbody tr:hover {
+    background: #fafbff;
+}
+
+.actions-cell {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    border: 1px solid #e0e0e0;
+    background: #fff;
+    color: #555;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s;
+}
+
+.btn-icon:hover {
+    background: #27247B;
+    color: #fff;
+    border-color: #27247B;
+}
+
+.btn-icon--danger:hover {
+    background: #e74c3c;
+    border-color: #e74c3c;
+}
+
+.no-data,
+.no-data-inline {
+    color: #999;
+    padding: 24px 0;
+    text-align: center;
+    font-size: 13px;
+}
+
+/* MEMBER CARDS (Honorary / Executive) */
+.member-card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 18px;
+    margin-bottom: 36px;
+}
+
+.member-card {
+    background: #fff;
+    border: 1px solid #eef0fb;
+    border-radius: 10px;
+    padding: 22px 18px;
+    text-align: center;
+    position: relative;
+    transition: all 0.2s;
+}
+
+.member-card:hover {
+    box-shadow: 0 8px 20px rgba(39,36,123,0.08);
+}
+
+.president-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    color: #FFCB05;
+    font-size: 14px;
+}
+
+.member-card-photo img,
+.member-card-photo .photo-placeholder {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin: 0 auto 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #27247B, #96CDF6);
+    color: #fff;
+}
+
+.member-card h4 {
+    font-size: 14px;
+    color: #222;
+    margin-bottom: 4px;
+}
+
+.member-card-title {
+    font-size: 12px;
+    color: #27247B;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.member-card-desc {
+    font-size: 12px;
+    color: #777;
+    line-height: 1.5;
+    margin-bottom: 14px;
+}
+
+.member-card-actions {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+}
+
+/* PRESIDENT BANNER */
+.president-banner {
+    background: linear-gradient(135deg, #27247B, #1a1860);
+    border-radius: 10px;
+    padding: 24px 28px;
+    margin-bottom: 36px;
+    color: #fff;
+}
+
+.president-banner-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255,255,255,0.15);
+    color: #FFCB05;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 5px 12px;
+    border-radius: 20px;
+    margin-bottom: 12px;
+}
+
+.president-banner h4 {
+    font-size: 18px;
+    margin-bottom: 6px;
+}
+
+.president-banner p {
+    font-size: 13px;
+    color: rgba(255,255,255,0.75);
+    line-height: 1.6;
+}
+
+/* EXECUTIVE GROUP BLOCKS */
+.exec-group-block {
+    margin-bottom: 36px;
+}
+
+.exec-group-title {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #27247B;
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #eef0fb;
+}
+
+/* MODAL TWEAKS */
+.modal--wide {
+    width: 600px;
+}
+
+.modal label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #222;
+    margin-top: 4px;
+}
+
+.modal select {
+    padding: 7px 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 13px;
+    font-family: inherit;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.checkbox-label input {
+    width: auto;
+}
+
+.modal-divider {
+    border: none;
+    border-top: 1px solid #eee;
+    margin: 20px 0;
+}
+
+.groups-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 280px;
+    overflow-y: auto;
+}
+
+.group-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.group-row-form {
+    display: flex;
+    gap: 8px;
+    flex: 1;
+}
+
+.group-row-form input[type="text"] {
+    flex: 1;
+}
+
+.order-input {
+    width: 70px;
+    flex: none;
+}
+
+.new-group-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal {
+    background: #fff;
+    border-radius: 10px;
+    padding: 28px 32px;
+    width: 480px;
+    max-width: 95vw;
+    max-height: 90vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
