@@ -144,27 +144,6 @@ body {
     outline: none;
 }
 
-.desc-toolbar {
-    display: flex;
-    gap: 6px;
-    padding: 6px 8px;
-    border: 1px solid #ddd;
-    border-bottom: none;
-    border-radius: 4px 4px 0 0;
-    background: #fafafa;
-}
-
-.desc-toolbar span {
-    font-size: 12px;
-    font-weight: 600;
-    color: #555;
-    cursor: pointer;
-    padding: 2px 5px;
-    border-radius: 2px;
-}
-
-.desc-toolbar span:hover { background: #ebebeb; }
-
 .job-card textarea {
     width: 100%;
     padding: 8px 10px;
@@ -249,33 +228,9 @@ body {
 }
 
 .btn-update:hover { background: #1e8449; }
-/* ── Footer ── */
-.footer-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 12px;
-    margin-top: 24px;
-}
-
-.btn-create {
-    background: #fff;
-    color: #27ae60;
-    border: 1.5px solid #27ae60;
-    border-radius: 6px;
-    padding: 9px 20px;
-    font-size: 13px;
-    font-weight: 500;
-    cursor: pointer;
-}
-.btn-create:hover {
-    background: #27ae60;
-    color: #fff;
-}
 
 /* ── Job card form spacing ── */
 .job-card form { display: flex; flex-direction: column; gap: 8px; }
-.job-card textarea { width: 100%; padding: 8px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; font-family: inherit; resize: none; outline: none; }
-
 /* ── Modal overlay ── */
 .modal-overlay {
     position: fixed; inset: 0;
@@ -328,3 +283,128 @@ body {
 }
 
 .btn-cancel:hover { background: #f5f5f5; }
+
+/* ── Registrations / Applications button ── */
+.btn-registrations {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #f0f4ff;
+    color: #27247B;
+    border: 1px solid #d0d5f5;
+    border-radius: 6px;
+    padding: 7px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    text-decoration: none;
+    margin-bottom: 14px;
+    transition: all 0.2s;
+}
+
+.btn-registrations:hover {
+    background: #27247B;
+    color: #fff;
+    border-color: #27247B;
+}
+
+.reg-badge {
+    background: #27247B;
+    color: #fff;
+    border-radius: 20px;
+    padding: 1px 8px;
+    font-size: 11px;
+    font-weight: 700;
+    min-width: 20px;
+    text-align: center;
+}
+
+.reg-badge--zero {
+    background: #e0e0e0;
+    color: #888;
+}
+
+/* Compact stats row */
+.stats-row-card {
+    background: #fff;
+    border: 2px solid #2ecc71;
+    border-radius: 8px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.stats-mini {
+    flex: 1;
+    text-align: center;
+}
+
+.stats-mini .stats-num {
+    font-size: 26px;
+    font-weight: 700;
+    color: #222;
+}
+
+.stats-mini .stats-label {
+    font-size: 11px;
+    color: #555;
+    margin-top: 2px;
+}
+
+.stats-divider {
+    width: 1px;
+    height: 36px;
+    background: #e0e0e0;
+}
+
+/* App/registration rows — now fully clickable */
+.app-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 8px;
+    border-bottom: 0.5px solid #eee;
+    font-size: 13px;
+    color: #333;
+    text-decoration: none;
+    border-radius: 6px;
+    transition: background 0.15s;
+    cursor: pointer;
+}
+
+.app-row:last-child { border-bottom: none; }
+
+.app-row:hover {
+    background: #f5f5ff;
+    color: #27247B;
+}
+
+.app-row:hover .app-arrow {
+    color: #27247B;
+}
+
+.app-label {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 13px;
+}
+
+.app-arrow {
+    font-size: 10px;
+    color: #ccc;
+    transition: color 0.15s;
+}
+
+.apps-card h4 {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.apps-card h4 i {
+    font-size: 13px;
+    color: #27247B;
+}

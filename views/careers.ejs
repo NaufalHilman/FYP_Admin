@@ -18,6 +18,7 @@
                 <i class="fa fa-search"></i>
                 <input type="text" id="searchInput" placeholder="Search" oninput="filterJobs()">
             </div>
+            <button class="btn-update" onclick="openModal()">+ New Job</button>
         </div>
 
         <div class="main-layout">
@@ -26,17 +27,17 @@
                     <div class="stats-num"><%= jobs.length %></div>
                     <div class="stats-label">Available Careers</div>
                 </div>
+
                 <div class="apps-card">
-                    <h4>View Applications</h4>
+                    <h4><i class="fas fa-file-alt"></i> Applications</h4>
                     <% jobs.forEach(job => { %>
-                    <div class="app-row">
+                    <a href="/careers/applications/<%= job.id %>" class="app-row">
                         <span class="app-count <%= (appCounts[job.id] || 0) === 0 ? 'zero' : '' %>">
                             <%= appCounts[job.id] || 0 %>
                         </span>
-                        <a href="/careers/applications/<%= job.id %>" style="color:#333; text-decoration:none;">
-                            <%= job.job_title %>
-                        </a>
-                    </div>
+                        <span class="app-label"><%= job.job_title %></span>
+                        <i class="fas fa-chevron-right app-arrow"></i>
+                    </a>
                     <% }) %>
                 </div>
             </aside>
@@ -44,6 +45,15 @@
             <section class="job-grid" id="jobGrid">
                 <% jobs.forEach(job => { %>
                 <div class="job-card" data-title="<%= job.job_title.toLowerCase() %>">
+                    
+                    <a href="/careers/applications/<%= job.id %>" class="btn-registrations">
+                        <i class="fas fa-file-alt"></i>
+                        Applications
+                        <span class="reg-badge <%= (appCounts[job.id] || 0) === 0 ? 'reg-badge--zero' : '' %>">
+                            <%= appCounts[job.id] || 0 %>
+                        </span>
+                    </a>
+
                     <form action="/careers/update/<%= job.id %>" method="POST" enctype="multipart/form-data">
                         <label>Job Title</label>
                         <input type="text" name="job_title" value="<%= job.job_title %>">
@@ -122,10 +132,6 @@
                     </div>
                 </form>
             </div>
-        </div>
-
-        <div class="footer-actions">
-            <button class="btn-create" onclick="openModal()">Create New Job</button>
         </div>
     </main>
 
