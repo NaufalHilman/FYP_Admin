@@ -27,7 +27,16 @@ const resumeStorage = new CloudinaryStorage({
     },
 });
 
+const memberPhotoStorage = new CloudinaryStorage({
+    cloudinary,
+    params: {
+        folder: 'arde/members',
+        allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
+    },
+});
+
 const uploadImage = multer({ storage: imageStorage });
+const uploadMemberPhoto = multer({ storage: memberPhotoStorage });
 const uploadResume = multer({ storage: resumeStorage });
 
-module.exports = { uploadImage, uploadResume };
+module.exports = { uploadImage, uploadResume, uploadMemberPhoto };

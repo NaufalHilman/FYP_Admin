@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Members Management</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/styles/careers.css">
+    <link rel="stylesheet" href="/styles/members-admin.css">
+</head>
+<body>
+    <%- include('../partials/sidebar') %>
+    <%- include('../partials/header') %>
+
+    <main class="content">
+        <div class="page-header">
+            <h1>Members Management</h1>
+        </div>
+
+        <!-- TABS -->
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="arde">ARDE Members</button>
+            <button class="tab-btn" data-tab="honorary">Honorary Members</button>
+            <button class="tab-btn" data-tab="executive">Executive Committee</button>
+        </div>
+
+        <!-- ============================= -->
+        <!-- TAB 1: ARDE MEMBERS -->
+        <!-- ============================= -->
+        <div class="tab-panel active" id="tab-arde">
+            <div class="panel-header">
+                <h3><%= members.length %> Members</h3>
+                <button class="btn-add" onclick="openModal('createMemberModal')">
+                    <i class="fas fa-plus"></i> Add Member
+                </button>
+            </div>
+
+            <% if (members.length === 0) { %>
+                <p class="no-data">No members added yet.</p>
+            <% } else { %>
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Company / Hotel</th>
+                        <th>Valid Till</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% members.forEach(m => { %>
+                    <tr>
+                        <td><%= m.full_name %></td>
+                        <td><%= m.company || '—' %></td>
+                        <td><%= m.valid_till ? new Date(m.valid_till).toLocaleDateString('en-SG', { year:'numeric', month:'short', day:'numeric' }) : '—' %></td>
+                        <td class="actions-cell">
+                            <button class="btn-icon btn-edit-member" data-member='<%- JSON.stringify(m).replace(/'/g, "&#39;") %>'>
+                                <i class="fas fa-pen"></i>
+                            </button>
+
+                            <form action="/members/delete/<%= m.id %>" method="POST" onsubmit="return confirm('Remove this member?')" style="display:inline;">
+                                <button type="submit" class="btn-icon btn-icon--danger">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    <% }) %>
+                </tbody>
+            </table>
+            <% } %>
+        </div>
+
+        <!-- ============================= -->
+        <!-- TAB 2: HONORARY MEMBERS -->
+        <!-- ============================= -->
+        <div class="tab-panel" id="tab-honorary">
+            <div class="panel-header">
+                <h3><%= honorary.length %> Honorary Members</h3>
+                <button class="btn-add" onclick="openModal('createHonoraryModal')">
+                    <i class="fas fa-plus"></i> Add Honorary Member
+                </button>
+            </div>
+
+            <% if (honorary.length === 0) { %>
+                <p class="no-data">No honorary members added yet.</p>
+            <% } else { %>
+            <div class="member-card-grid">
+                <% honorary.forEach(h => { %>
+                <div class="member-card">
+                    <div class="member-card-photo">
+                        <% if (h.image_path) { %>
+                            <img src="<%= h.image_path %>" alt="<%= h.full_name %>">
+                        <% } else { %>
+                            <div class="photo-placeholder"><%= h.full_name.charAt(0) %></div>
+                        <% } %>
+                    </div>
+                    <h4><%= h.full_name %></h4>
+                    <p class="member-card-title"><%= h.title || '—' %></p>
+                    <% if (h.description) { %><p class="member-card-desc"><%= h.description %></p><% } %>
+                    <div class="member-card-actions">
+                        <button class="btn-icon btn-edit-honorary" data-member='<%- JSON.stringify(h).replace(/'/g, "&#39;") %>'>
+                            <i class="fas fa-pen"></i>
+                        </button>
+                        <form action="/members/honorary/delete/<%= h.id %>" method="POST" onsubmit="return confirm('Remove this honorary member?')" style="display:inline;">
+                            <button type="submit" class="btn-icon btn-icon--danger">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                <% }) %>
+            </div>
+            <% } %>
+        </div>
+
+        <!-- ============================= -->
+        <!-- TAB 3: EXECUTIVE COMMITTEE -->
+        <!-- ============================= -->
+        <div class="tab-panel" id="tab-executive">
+            <div class="panel-header">
+                <h3>Executive Committee</h3>
+                <div class="panel-header-actions">
+                    <button class="btn-add btn-add--secondary" onclick="openModal('manageGroupsModal')">
+                        <i class="fas fa-layer-group"></i> Manage Groups
+                    </button>
+                    <button class="btn-add" onclick="openModal('createExecutiveModal')">
+                        <i class="fas fa-plus"></i> Add Member
+                    </button>
+                </div>
+            </div>
+
+            <% if (president) { %>
+            <div class="president-banner">
+                <span class="president-banner-tag"><i class="fas fa-crown"></i> Current President</span>
+                <h4><%= president.full_name %></h4>
+                <p><%= president.president_vision %></p>
+            </div>
+            <% } %>
+
+            <% groupedExecutives.forEach(group => { %>
+            <div class="exec-group-block">
+                <h3 class="exec-group-title"><%= group.group_name %></h3>
+                <% if (group.members.length === 0) { %>
+                    <p class="no-data-inline">No members in this group yet.</p>
+                <% } else { %>
+                <div class="member-card-grid">
+                    <% group.members.forEach(member => { %>
+                    <div class="member-card">
+                        <% if (member.is_president) { %><span class="president-badge"><i class="fas fa-crown"></i></span><% } %>
+                        <div class="member-card-photo">
+                            <% if (member.image_path) { %>
+                                <img src="<%= member.image_path %>" alt="<%= member.full_name %>">
+                            <% } else { %>
+                                <div class="photo-placeholder"><%= member.full_name.charAt(0) %></div>
+                            <% } %>
+                        </div>
+                        <h4><%= member.full_name %></h4>
+                        <p class="member-card-title"><%= member.title %></p>
+                        <% if (member.description) { %><p class="member-card-desc"><%= member.description %></p><% } %>
+                        <div class="member-card-actions">
+                            <button class="btn-icon btn-edit-exec" data-member='<%- JSON.stringify(member).replace(/'/g, "&#39;") %>'>
+                                <i class="fas fa-pen"></i>
+                            </button>
+                            <form action="/members/executive/delete/<%= member.id %>" method="POST" onsubmit="return confirm('Remove this member?')" style="display:inline;">
+                                <button type="submit" class="btn-icon btn-icon--danger">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    <% }) %>
+                </div>
+                <% } %>
+            </div>
+            <% }) %>
+        </div>
+
+        <!-- ============================================= -->
+        <!-- MODAL: Create ARDE Member -->
+        <!-- ============================================= -->
+        <div id="createMemberModal" class="modal-overlay">
+            <div class="modal">
+                <h3>Add Member</h3>
+                <form action="/members/create" method="POST">
+                    <label>Full Name</label>
+                    <input type="text" name="full_name" required>
+                    <label>Company / Hotel</label>
+                    <input type="text" name="company">
+                    <label>Valid Till</label>
+                    <input type="date" name="valid_till">
+                    <div class="modal-actions">
+                        <button type="button" class="btn-cancel" onclick="closeModal('createMemberModal')">Cancel</button>
+                        <button type="submit" class="btn-update">Add Member</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- MODAL: Edit ARDE Member -->
+        <div id="editMemberModal" class="modal-overlay">
+            <div class="modal">
+                <h3>Edit Member</h3>
+                <form id="editMemberForm" method="POST">
+                    <label>Full Name</label>
+                    <input type="text" name="full_name" id="edit-member-name" required>
+                    <label>Company / Hotel</label>
+                    <input type="text" name="company" id="edit-member-company">
+                    <label>Valid Till</label>
+                    <input type="date" name="valid_till" id="edit-member-valid">
+                    <div class="modal-actions">
+                        <button type="button" class="btn-cancel" onclick="closeModal('editMemberModal')">Cancel</button>
+                        <button type="submit" class="btn-update">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- ============================================= -->
+        <!-- MODAL: Create Honorary Member -->
+        <!-- ============================================= -->
+        <div id="createHonoraryModal" class="modal-overlay">
+            <div class="modal">
+                <h3>Add Honorary Member</h3>
+                <form action="/members/honorary/create" method="POST" enctype="multipart/form-data">
+                    <label>Full Name</label>
+                    <input type="text" name="full_name" required>
+                    <label>Title</label>
+                    <input type="text" name="title" placeholder="e.g. Honorary Member">
+                    <label>Description</label>
+                    <textarea name="description" rows="3"></textarea>
+                    <label>Display Order</label>
+                    <input type="number" name="display_order" value="0">
+                    <label>Photo</label>
+                    <input type="file" name="image" accept="image/*">
+                    <div class="modal-actions">
+                        <button type="button" class="btn-cancel" onclick="closeModal('createHonoraryModal')">Cancel</button>
+                        <button type="submit" class="btn-update">Add Member</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- MODAL: Edit Honorary Member -->
+        <div id="editHonoraryModal" class="modal-overlay">
+            <div class="modal">
+                <h3>Edit Honorary Member</h3>
+                <form id="editHonoraryForm" method="POST" enctype="multipart/form-data">
+                    <label>Full Name</label>
+                    <input type="text" name="full_name" id="edit-honorary-name" required>
+                    <label>Title</label>
+                    <input type="text" name="title" id="edit-honorary-title">
+                    <label>Description</label>
+                    <textarea name="description" id="edit-honorary-desc" rows="3"></textarea>
+                    <label>Display Order</label>
+                    <input type="number" name="display_order" id="edit-honorary-order">
+                    <label>Photo (leave blank to keep current)</label>
+                    <input type="file" name="image" accept="image/*">
+                    <div class="modal-actions">
+                        <button type="button" class="btn-cancel" onclick="closeModal('editHonoraryModal')">Cancel</button>
+                        <button type="submit" class="btn-update">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- ============================================= -->
+        <!-- MODAL: Create Executive Member -->
+        <!-- ============================================= -->
+        <div id="createExecutiveModal" class="modal-overlay">
+            <div class="modal">
+                <h3>Add Executive Member</h3>
+                <form action="/members/executive/create" method="POST" enctype="multipart/form-data">
+                    <label>Group</label>
+                    <select name="group_id" required>
+                        <% groups.forEach(g => { %>
+                            <option value="<%= g.id %>"><%= g.group_name %></option>
+                        <% }) %>
+                    </select>
+                    <label>Full Name</label>
+                    <input type="text" name="full_name" required>
+                    <label>Title</label>
+                    <input type="text" name="title" placeholder="e.g. Vice President">
+                    <label>Description</label>
+                    <textarea name="description" rows="3"></textarea>
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="is_president" id="create-is-president">
+                        Set as Current President
+                    </label>
+                    <div id="create-president-vision-wrap" style="display:none;">
+                        <label>President Vision Statement (2 lines)</label>
+                        <textarea name="president_vision" rows="2"></textarea>
+                    </div>
+                    <label>Display Order</label>
+                    <input type="number" name="display_order" value="0">
+                    <label>Photo</label>
+                    <input type="file" name="image" accept="image/*">
+                    <div class="modal-actions">
+                        <button type="button" class="btn-cancel" onclick="closeModal('createExecutiveModal')">Cancel</button>
+                        <button type="submit" class="btn-update">Add Member</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- MODAL: Edit Executive Member -->
+        <div id="editExecutiveModal" class="modal-overlay">
+            <div class="modal">
+                <h3>Edit Executive Member</h3>
+                <form id="editExecutiveForm" method="POST" enctype="multipart/form-data">
+                    <label>Group</label>
+                    <select name="group_id" id="edit-exec-group" required>
+                        <% groups.forEach(g => { %>
+                            <option value="<%= g.id %>"><%= g.group_name %></option>
+                        <% }) %>
+                    </select>
+                    <label>Full Name</label>
+                    <input type="text" name="full_name" id="edit-exec-name" required>
+                    <label>Title</label>
+                    <input type="text" name="title" id="edit-exec-title">
+                    <label>Description</label>
+                    <textarea name="description" id="edit-exec-desc" rows="3"></textarea>
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="is_president" id="edit-is-president">
+                        Set as Current President
+                    </label>
+                    <div id="edit-president-vision-wrap" style="display:none;">
+                        <label>President Vision Statement (2 lines)</label>
+                        <textarea name="president_vision" id="edit-exec-vision" rows="2"></textarea>
+                    </div>
+                    <label>Display Order</label>
+                    <input type="number" name="display_order" id="edit-exec-order">
+                    <label>Photo (leave blank to keep current)</label>
+                    <input type="file" name="image" accept="image/*">
+                    <div class="modal-actions">
+                        <button type="button" class="btn-cancel" onclick="closeModal('editExecutiveModal')">Cancel</button>
+                        <button type="submit" class="btn-update">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- ============================================= -->
+        <!-- MODAL: Manage Groups -->
+        <!-- ============================================= -->
+        <div id="manageGroupsModal" class="modal-overlay">
+            <div class="modal modal--wide">
+                <h3>Manage Executive Groups</h3>
+
+                <div class="groups-list">
+                    <% groups.forEach(g => { %>
+                    <div class="group-row">
+                        <form action="/members/groups/update/<%= g.id %>" method="POST" class="group-row-form">
+                            <input type="text" name="group_name" value="<%= g.group_name %>" required>
+                            <input type="number" name="display_order" value="<%= g.display_order %>" class="order-input">
+                            <button type="submit" class="btn-icon"><i class="fas fa-check"></i></button>
+                        </form>
+                        <form action="/members/groups/delete/<%= g.id %>" method="POST" onsubmit="return confirm('Delete this group? Members inside will also be removed.')">
+                            <button type="submit" class="btn-icon btn-icon--danger"><i class="fas fa-trash"></i></button>
+                        </form>
+                    </div>
+                    <% }) %>
+                </div>
+
+                <hr class="modal-divider">
+
+                <form action="/members/groups/create" method="POST" class="new-group-form">
+                    <label>New Group Name</label>
+                    <input type="text" name="group_name" placeholder="e.g. Partnerships & Sponsorship" required>
+                    <label>Display Order</label>
+                    <input type="number" name="display_order" value="0">
+                    <div class="modal-actions">
+                        <button type="button" class="btn-cancel" onclick="closeModal('manageGroupsModal')">Close</button>
+                        <button type="submit" class="btn-update">Add Group</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // ===== TABS =====
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+                localStorage.setItem('membersActiveTab', btn.dataset.tab); // save it
+            });
+        });
+
+        // Restore active tab after form submit
+        const savedTab = localStorage.getItem('membersActiveTab');
+        if (savedTab) {
+            const targetBtn = document.querySelector(`.tab-btn[data-tab="${savedTab}"]`);
+            const targetPanel = document.getElementById('tab-' + savedTab);
+            if (targetBtn && targetPanel) {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+                targetBtn.classList.add('active');
+                targetPanel.classList.add('active');
+            }
+        }
+
+        // ===== MODAL HELPERS =====
+        function openModal(id) {
+            document.getElementById(id).style.display = 'flex';
+        }
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+        }
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', e => {
+                if (e.target === overlay) overlay.style.display = 'none';
+            });
+        });
+
+        // ===== EDIT ARDE MEMBER =====
+        function openEditMember(m) {
+            document.getElementById('edit-member-name').value = m.full_name;
+            document.getElementById('edit-member-company').value = m.company || '';
+            document.getElementById('edit-member-valid').value = m.valid_till ? m.valid_till.split('T')[0] : '';
+            document.getElementById('editMemberForm').action = '/members/update/' + m.id;
+            openModal('editMemberModal');
+        }
+
+        document.querySelectorAll('.btn-edit-member').forEach(btn => {
+            btn.addEventListener('click', () => openEditMember(JSON.parse(btn.dataset.member)));
+        });
+
+        // ===== EDIT HONORARY MEMBER =====
+        function openEditHonorary(h) {
+            document.getElementById('edit-honorary-name').value = h.full_name;
+            document.getElementById('edit-honorary-title').value = h.title || '';
+            document.getElementById('edit-honorary-desc').value = h.description || '';
+            document.getElementById('edit-honorary-order').value = h.display_order ?? 0;
+            document.getElementById('editHonoraryForm').action = '/members/honorary/update/' + h.id;
+            openModal('editHonoraryModal');
+        }
+        
+        document.querySelectorAll('.btn-edit-honorary').forEach(btn => {
+            btn.addEventListener('click', () => openEditHonorary(JSON.parse(btn.dataset.member)));
+        });
+
+        // ===== EDIT EXECUTIVE MEMBER =====
+        function openEditExecutive(m) {
+            document.getElementById('edit-exec-group').value = m.group_id;
+            document.getElementById('edit-exec-name').value = m.full_name;
+            document.getElementById('edit-exec-title').value = m.title || '';
+            document.getElementById('edit-exec-desc').value = m.description || '';
+            document.getElementById('edit-exec-order').value = m.display_order ?? 0;
+            document.getElementById('edit-exec-vision').value = m.president_vision || '';
+
+            const isPres = !!m.is_president;
+            document.getElementById('edit-is-president').checked = isPres;
+            document.getElementById('edit-president-vision-wrap').style.display = isPres ? 'block' : 'none';
+
+            document.getElementById('editExecutiveForm').action = '/members/executive/update/' + m.id;
+            openModal('editExecutiveModal');
+        }
+
+        document.querySelectorAll('.btn-edit-exec').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const member = JSON.parse(btn.dataset.member);
+                openEditExecutive(member);
+            });
+        });
+
+        // ===== TOGGLE PRESIDENT VISION FIELD =====
+        document.getElementById('create-is-president').addEventListener('change', function() {
+            document.getElementById('create-president-vision-wrap').style.display = this.checked ? 'block' : 'none';
+        });
+        document.getElementById('edit-is-president').addEventListener('change', function() {
+            document.getElementById('edit-president-vision-wrap').style.display = this.checked ? 'block' : 'none';
+        });
+    </script>
+</body>
+</html>

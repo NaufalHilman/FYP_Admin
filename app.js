@@ -2,9 +2,10 @@ require('dotenv').config();
 const express = require('express');
 const bcrypt = require('bcrypt');
 const db = require('./config/db');
-const { uploadImage } = require('./config/cloudinary');
 const cookieSession = require('cookie-session');
 const app = express();
+const { uploadImage, uploadMemberPhoto } = require('./config/cloudinary');
+
 
 // Middleware — order matters
 app.set('trust proxy', 1);
@@ -252,5 +253,223 @@ if (require.main === module) {
         console.log(`Server running on port ${PORT}`);
     });
 }
+
+/* =====================================================
+   MEMBERS PAGE (overview with tabs)
+===================================================== */
+app.get('/members', isAuthenticated, async (req, res) => {
+    try {
+        const [members] = await db.query('SELECT * FROM members ORDER BY full_name ASC');
+        const [honorary] = await db.query('SELECT * FROM honorary_members ORDER BY display_order ASC');
+        const [groups] = await db.query('SELECT * FROM executive_groups ORDER BY display_order ASC');
+        const [executives] = await db.query('SELECT * FROM executive_members ORDER BY display_order ASC');
+
+        // Attach executives to their groups
+        const groupedExecutives = groups.map(group => ({
+            ...group,
+            members: executives.filter(e => e.group_id === group.id)
+        }));
+
+        const president = executives.find(e => e.is_president);
+
+        res.render('members', { members, honorary, groupedExecutives, president, groups });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Server Error');
+    }
+});
+
+/* =====================================================
+   REGULAR MEMBERS — CRUD
+===================================================== */
+app.post('/members/create', isAuthenticated, async (req, res) => {
+    const { full_name, company, valid_till } = req.body;
+    try {
+        await db.query(
+            'INSERT INTO members (full_name, company, valid_till) VALUES (?, ?, ?)',
+            [full_name, company, valid_till]
+        );
+        res.redirect('/members');
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Error creating member');
+    }
+});
+
+app.post('/members/update/:id', isAuthenticated, async (req, res) => {
+    const { full_name, company, valid_till } = req.body;
+    try {
+        await db.query(
+            'UPDATE members SET full_name=?, company=?, valid_till=? WHERE id=?',
+            [full_name, company, valid_till, req.params.id]
+        );
+        res.redirect('/members');
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Error updating member');
+    }
+});
+
+app.post('/members/delete/:id', isAuthenticated, async (req, res) => {
+    try {
+        await db.query('DELETE FROM members WHERE id = ?', [req.params.id]);
+        res.redirect('/members');
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Error deleting member');
+    }
+});
+
+/* =====================================================
+   HONORARY MEMBERS — CRUD
+===================================================== */
+app.post('/members/honorary/create', isAuthenticated, uploadMemberPhoto.single('image'), async (req, res) => {
+    const { full_name, title, description, display_order } = req.body;
+    const image_path = req.file ? req.file.path : null;
+    try {
+        await db.query(
+            'INSERT INTO honorary_members (full_name, title, description, image_path, display_order) VALUES (?, ?, ?, ?, ?)',
+            [full_name, title, description, image_path, display_order || 0]
+        );
+        res.redirect('/members');
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Error creating honorary member');
+    }
+});
+
+app.post('/members/honorary/update/:id', isAuthenticated, uploadMemberPhoto.single('image'), async (req, res) => {
+    const { full_name, title, description, display_order } = req.body;
+    try {
+        if (req.file) {
+            await db.query(
+                'UPDATE honorary_members SET full_name=?, title=?, description=?, image_path=?, display_order=? WHERE id=?',
+                [full_name, title, description, req.file.path, display_order || 0, req.params.id]
+            );
+        } else {
+            await db.query(
+                'UPDATE honorary_members SET full_name=?, title=?, description=?, display_order=? WHERE id=?',
+                [full_name, title, description, display_order || 0, req.params.id]
+            );
+        }
+        res.redirect('/members');
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Error updating honorary member');
+    }
+});
+
+app.post('/members/honorary/delete/:id', isAuthenticated, async (req, res) => {
+    try {
+        await db.query('DELETE FROM honorary_members WHERE id = ?', [req.params.id]);
+        res.redirect('/members');
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Error deleting honorary member');
+    }
+});
+
+/* =====================================================
+   EXECUTIVE GROUPS — CRUD
+===================================================== */
+app.post('/members/groups/create', isAuthenticated, async (req, res) => {
+    const { group_name, display_order } = req.body;
+    try {
+        await db.query(
+            'INSERT INTO executive_groups (group_name, display_order) VALUES (?, ?)',
+            [group_name, display_order || 0]
+        );
+        res.redirect('/members');
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Error creating group');
+    }
+});
+
+app.post('/members/groups/update/:id', isAuthenticated, async (req, res) => {
+    const { group_name, display_order } = req.body;
+    try {
+        await db.query(
+            'UPDATE executive_groups SET group_name=?, display_order=? WHERE id=?',
+            [group_name, display_order || 0, req.params.id]
+        );
+        res.redirect('/members');
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Error updating group');
+    }
+});
+
+app.post('/members/groups/delete/:id', isAuthenticated, async (req, res) => {
+    try {
+        await db.query('DELETE FROM executive_groups WHERE id = ?', [req.params.id]);
+        res.redirect('/members');
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Error deleting group');
+    }
+});
+
+/* =====================================================
+   EXECUTIVE MEMBERS — CRUD
+===================================================== */
+app.post('/members/executive/create', isAuthenticated, uploadMemberPhoto.single('image'), async (req, res) => {
+    const { group_id, full_name, title, description, is_president, president_vision, display_order } = req.body;
+    const image_path = req.file ? req.file.path : null;
+    try {
+        // If this person is being set as president, unset any existing president first
+        if (is_president === 'on') {
+            await db.query('UPDATE executive_members SET is_president = FALSE');
+        }
+        await db.query(
+            `INSERT INTO executive_members 
+            (group_id, full_name, title, description, image_path, is_president, president_vision, display_order) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            [group_id, full_name, title, description, image_path, is_president === 'on', president_vision || null, display_order || 0]
+        );
+        res.redirect('/members');
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Error creating executive member');
+    }
+});
+
+app.post('/members/executive/update/:id', isAuthenticated, uploadMemberPhoto.single('image'), async (req, res) => {
+    const { group_id, full_name, title, description, is_president, president_vision, display_order } = req.body;
+    try {
+        if (is_president === 'on') {
+            await db.query('UPDATE executive_members SET is_president = FALSE');
+        }
+        if (req.file) {
+            await db.query(
+                `UPDATE executive_members 
+                SET group_id=?, full_name=?, title=?, description=?, image_path=?, is_president=?, president_vision=?, display_order=? 
+                WHERE id=?`,
+                [group_id, full_name, title, description, req.file.path, is_president === 'on', president_vision || null, display_order || 0, req.params.id]
+            );
+        } else {
+            await db.query(
+                `UPDATE executive_members 
+                SET group_id=?, full_name=?, title=?, description=?, is_president=?, president_vision=?, display_order=? 
+                WHERE id=?`,
+                [group_id, full_name, title, description, is_president === 'on', president_vision || null, display_order || 0, req.params.id]
+            );
+        }
+        res.redirect('/members');
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Error updating executive member');
+    }
+});
+
+app.post('/members/executive/delete/:id', isAuthenticated, async (req, res) => {
+    try {
+        await db.query('DELETE FROM executive_members WHERE id = ?', [req.params.id]);
+        res.redirect('/members');
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Error deleting executive member');
+    }
+});
 
 module.exports = app;
