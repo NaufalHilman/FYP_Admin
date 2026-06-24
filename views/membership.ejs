@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Membership Applications</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/styles/careers.css">
+    <link rel="stylesheet" href="/styles/applications.css">
+    <link rel="stylesheet" href="/styles/membership.css">
+</head>
+<body>
+    <%- include('../partials/sidebar') %>
+    <%- include('../partials/header') %>
+
+    <main class="content">
+        <div class="page-header">
+            <h1>Membership Applications</h1>
+        </div>
+
+        <% if (typeof error !== 'undefined' && error) { %>
+            <div class="msship-banner msship-banner--error">
+                <i class="fas fa-triangle-exclamation"></i> <%= error %>
+            </div>
+        <% } %>
+        <% if (typeof notice !== 'undefined' && notice) { %>
+            <div class="msship-banner msship-banner--ok">
+                <i class="fas fa-circle-check"></i> <%= notice %>
+            </div>
+        <% } %>
+
+        <%
+            const pending  = applications.filter(a => a.status === 'pending');
+            const accepted = applications.filter(a => a.status === 'accepted');
+        %>
+        <div class="stats-row">
+            <div class="stat-box">
+                <div class="num"><%= applications.length %></div>
+                <div class="lbl">Total Applications</div>
+            </div>
+            <div class="stat-box stat-box--gold">
+                <div class="num"><%= pending.length %></div>
+                <div class="lbl">Pending Review</div>
+            </div>
+            <div class="stat-box stat-box--accent">
+                <div class="num"><%= accepted.length %></div>
+                <div class="lbl">Accepted Members</div>
+            </div>
+        </div>
+
+        <% if (applications.length === 0) { %>
+            <div class="no-apps">
+                <i class="fas fa-inbox"></i>
+                <p>No membership applications yet.</p>
+            </div>
+        <% } else { %>
+        <div class="applications-list">
+            <% applications.forEach(app => { %>
+            <div class="application-card">
+                <div class="applicant-header">
+                    <div class="applicant-avatar"><%= app.full_name.charAt(0).toUpperCase() %></div>
+                    <div class="applicant-info">
+                        <h4>
+                            <%= app.title ? app.title + ' ' : '' %><%= app.full_name %>
+                            <span class="msship-type"><%= app.membership_type %></span>
+                        </h4>
+                        <p>
+                            <i class="fas fa-envelope"></i> <%= app.personal_email %>
+                            <% if (app.mobile_number) { %> &nbsp;·&nbsp; <i class="fas fa-phone"></i> <%= app.mobile_number %><% } %>
+                        </p>
+                    </div>
+                    <span class="msship-status msship-status--<%= app.status %>"><%= app.status %></span>
+                </div>
+
+                <div class="msship-grid">
+                    <div><span>Nationality</span><%= app.nationality || '—' %></div>
+                    <div><span>Date of Birth</span><%= app.date_of_birth ? new Date(app.date_of_birth).toLocaleDateString('en-SG', {year:'numeric',month:'short',day:'numeric'}) : '—' %></div>
+                    <div><span>Hotel</span><%= app.hotel_name || '—' %></div>
+                    <div><span>Current Position</span><%= app.current_position || '—' %></div>
+                    <div><span>Years in Position</span><%= app.years_in_position || '—' %></div>
+                    <div><span>Business Email</span><%= app.business_email || '—' %></div>
+                    <div><span>Telephone</span><%= app.telephone_number || '—' %></div>
+                    <div><span>Residential Address</span><%= app.residential_address || '—' %></div>
+                    <div><span>Business Address</span><%= app.business_address || '—' %></div>
+                    <div><span>Email updates</span><%= app.opt_email_updates ? 'Yes' : 'No' %></div>
+                    <div><span>Event SMS</span><%= app.opt_event_sms ? 'Yes' : 'No' %></div>
+                    <div><span>Admin responsibility</span><%= app.opt_admin_responsibility ? 'Yes' : 'No' %></div>
+                </div>
+
+                <div class="card-footer msship-footer">
+                    <% if (app.status === 'accepted') { %>
+                        <span class="msship-id">
+                            <i class="fas fa-id-card"></i> Member ID:
+                            <strong><%= app.member_id || app.existing_member_id || '—' %></strong>
+                        </span>
+                    <% } else if (app.status === 'declined') { %>
+                        <span class="no-resume">Declined</span>
+                    <% } else { %>
+                        <% if (app.membership_type === 'Renew') { %>
+                            <span class="msship-renew-note">
+                                <i class="fas fa-rotate"></i> Renewing ID: <strong><%= app.existing_member_id || '—' %></strong>
+                            </span>
+                        <% } %>
+                        <form action="/membership/accept/<%= app.id %>" method="POST"
+                              onsubmit="return confirm('Accept this application?');" style="display:inline;">
+                            <button type="submit" class="msship-btn msship-btn--accept">
+                                <i class="fas fa-check"></i> Accept
+                            </button>
+                        </form>
+                        <form action="/membership/decline/<%= app.id %>" method="POST"
+                              onsubmit="return confirm('Decline this application?');" style="display:inline;">
+                            <button type="submit" class="msship-btn msship-btn--decline">
+                                <i class="fas fa-xmark"></i> Decline
+                            </button>
+                        </form>
+                    <% } %>
+                </div>
+            </div>
+            <% }) %>
+        </div>
+        <% } %>
+    </main>
+</body>
+</html>

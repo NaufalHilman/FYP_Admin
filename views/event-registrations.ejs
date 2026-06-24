@@ -55,7 +55,12 @@
                 <div class="applicant-header">
                     <div class="applicant-avatar"><%= reg.full_name.charAt(0).toUpperCase() %></div>
                     <div class="applicant-info">
-                        <h4><%= reg.full_name %></h4>
+                        <h4>
+                            <%= reg.full_name %>
+                            <% if (reg.member_id) { %>
+                                <span style="font-size:11px; background:#eef0fb; color:#27247B; padding:2px 10px; border-radius:12px; font-weight:700; margin-left:6px; vertical-align:middle;">ID: <%= reg.member_id %></span>
+                            <% } %>
+                        </h4>
                         <p>
                             <i class="fas fa-envelope"></i> <%= reg.email %>
                             <% if (reg.phone) { %> &nbsp;·&nbsp; <i class="fas fa-phone"></i> <%= reg.phone %><% } %>
