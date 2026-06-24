@@ -280,6 +280,118 @@ app.get('/members', isAuthenticated, async (req, res) => {
 });
 
 /* =====================================================
+   MEMBERSHIP APPLICATIONS (review + approve)
+===================================================== */
+
+// Generate a random, zero-padded 5-digit ID that isn't already taken
+async function generateMemberId() {
+    for (let attempt = 0; attempt < 20; attempt++) {
+        const candidate = String(Math.floor(Math.random() * 100000)).padStart(5, '0');
+        const [rows] = await db.query(
+            'SELECT id FROM membership_applications WHERE member_id = ?',
+            [candidate]
+        );
+        if (rows.length === 0) return candidate;
+    }
+    throw new Error('Could not generate a unique member ID');
+}
+
+// List all applications
+app.get('/membership', isAuthenticated, async (req, res) => {
+    try {
+        const [applications] = await db.query(
+            `SELECT * FROM membership_applications
+             WHERE NOT (membership_type = 'Renew' AND status = 'accepted')
+             ORDER BY (status = 'pending') DESC, submitted_at DESC`
+        );
+        res.render('membership', {
+            applications,
+            error: req.query.error || null,
+            notice: req.query.notice || null
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Server Error');
+    }
+});
+
+// Accept an application
+app.post('/membership/accept/:id', isAuthenticated, async (req, res) => {
+    try {
+        const [[app]] = await db.query(
+            'SELECT * FROM membership_applications WHERE id = ?',
+            [req.params.id]
+        );
+        if (!app || app.status !== 'pending') {
+            return res.redirect('/membership?error=' + encodeURIComponent('Application not found or already processed.'));
+        }
+
+        if (app.membership_type === 'Renew') {
+            const existing = (app.existing_member_id || '').trim();
+            const [match] = await db.query(
+                "SELECT id FROM membership_applications WHERE member_id = ? AND status = 'accepted'",
+                [existing]
+            );
+            if (match.length === 0) {
+                return res.redirect('/membership?error=' + encodeURIComponent('Cannot accept renewal: ID "' + existing + '" does not match any existing member.'));
+            }
+
+            // Overwrite the original member record with the renewal's latest details
+            await db.query(
+                `UPDATE membership_applications SET
+                    title = ?, full_name = ?, nationality = ?, date_of_birth = ?,
+                    residential_address = ?, personal_email = ?, mobile_number = ?,
+                    hotel_name = ?, business_address = ?, business_email = ?,
+                    telephone_number = ?, current_position = ?, years_in_position = ?,
+                    opt_email_updates = ?, opt_event_sms = ?, opt_admin_responsibility = ?,
+                    consent = ?
+                 WHERE id = ?`,
+                [
+                    app.title, app.full_name, app.nationality, app.date_of_birth,
+                    app.residential_address, app.personal_email, app.mobile_number,
+                    app.hotel_name, app.business_address, app.business_email,
+                    app.telephone_number, app.current_position, app.years_in_position,
+                    app.opt_email_updates, app.opt_event_sms, app.opt_admin_responsibility,
+                    app.consent, match[0].id
+                ]
+            );
+
+            // Mark the renewal row itself as accepted (kept as an audit record)
+            await db.query(
+                "UPDATE membership_applications SET status = 'accepted', reviewed_at = NOW() WHERE id = ?",
+                [app.id]
+            );
+            return res.redirect('/membership?notice=' + encodeURIComponent('Renewal accepted for member ' + existing + '. Details updated.'));
+        }
+
+        // New application → mint a fresh unique ID
+        const newId = await generateMemberId();
+        await db.query(
+            "UPDATE membership_applications SET status = 'accepted', member_id = ?, reviewed_at = NOW() WHERE id = ?",
+            [newId, app.id]
+        );
+        res.redirect('/membership?notice=' + encodeURIComponent('Accepted. New member ID: ' + newId));
+    } catch (err) {
+        console.error(err);
+        res.redirect('/membership?error=' + encodeURIComponent('Something went wrong while accepting.'));
+    }
+});
+
+// Decline an application
+app.post('/membership/decline/:id', isAuthenticated, async (req, res) => {
+    try {
+        await db.query(
+            "UPDATE membership_applications SET status = 'declined', reviewed_at = NOW() WHERE id = ? AND status = 'pending'",
+            [req.params.id]
+        );
+        res.redirect('/membership?notice=' + encodeURIComponent('Application declined.'));
+    } catch (err) {
+        console.error(err);
+        res.redirect('/membership?error=' + encodeURIComponent('Something went wrong while declining.'));
+    }
+});
+
+/* =====================================================
    REGULAR MEMBERS — CRUD
 ===================================================== */
 app.post('/members/create', isAuthenticated, async (req, res) => {
