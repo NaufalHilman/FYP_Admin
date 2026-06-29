@@ -17,11 +17,29 @@
             <h1>Members Management</h1>
         </div>
 
+        <% if (error) { %>
+        <div class="alert alert-error">
+            <i class="fas fa-exclamation-circle"></i> <%= error %>
+        </div>
+        <% } %>
+        <% if (notice) { %>
+        <div class="alert alert-notice">
+            <i class="fas fa-check-circle"></i> <%= notice %>
+        </div>
+        <% } %>
+
         <!-- TABS -->
+        <% const pendingApps = applications.filter(a => a.status === 'pending'); %>
         <div class="tabs">
             <button class="tab-btn active" data-tab="arde">ARDE Members</button>
             <button class="tab-btn" data-tab="honorary">Honorary Members</button>
             <button class="tab-btn" data-tab="executive">Executive Committee</button>
+            <button class="tab-btn" data-tab="applications">
+                Applications
+                <% if (pendingApps.length > 0) { %>
+                <span class="tab-badge"><%= pendingApps.length %></span>
+                <% } %>
+            </button>
         </div>
 
         <!-- ============================= -->
@@ -29,10 +47,22 @@
         <!-- ============================= -->
         <div class="tab-panel active" id="tab-arde">
             <div class="panel-header">
-                <h3><%= members.length %> Members</h3>
-                <button class="btn-add" onclick="openModal('createMemberModal')">
-                    <i class="fas fa-plus"></i> Add Member
-                </button>
+                <h3><span id="arde-count"><%= members.length %></span> Members</h3>
+                <div class="filter-bar">
+                    <div class="search-box">
+                        <i class="fa fa-search"></i>
+                        <input type="text" id="arde-search" placeholder="Search name or company…" oninput="filterArde()">
+                    </div>
+                    <select id="arde-status-filter" onchange="filterArde()" class="filter-select">
+                        <option value="all">All</option>
+                        <option value="active">Active</option>
+                        <option value="expired">Expired</option>
+                        <option value="none">No expiry set</option>
+                    </select>
+                    <button class="btn-add" onclick="openModal('createMemberModal')">
+                        <i class="fas fa-plus"></i> Add Member
+                    </button>
+                </div>
             </div>
 
             <% if (members.length === 0) { %>
@@ -41,24 +71,30 @@
             <table class="admin-table">
                 <thead>
                     <tr>
+                        <th>Member ID</th>
                         <th>Name</th>
                         <th>Company / Hotel</th>
                         <th>Valid Till</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
-                <tbody>
-                    <% members.forEach(m => { %>
-                    <tr>
+                <tbody id="arde-tbody">
+                    <% members.forEach(m => {
+                        const vt = m.valid_till ? new Date(m.valid_till) : null;
+                        const status = !vt ? 'none' : (vt >= new Date() ? 'active' : 'expired');
+                    %>
+                    <tr data-name="<%= m.full_name.toLowerCase() %>"
+                        data-company="<%= (m.company || '').toLowerCase() %>"
+                        data-vstatus="<%= status %>">
+                        <td><code class="member-id-chip"><%= m.member_id || '—' %></code></td>
                         <td><%= m.full_name %></td>
                         <td><%= m.company || '—' %></td>
-                        <td><%= m.valid_till ? new Date(m.valid_till).toLocaleDateString('en-SG', { year:'numeric', month:'short', day:'numeric' }) : '—' %></td>
+                        <td><%= vt ? vt.toLocaleDateString('en-SG', { year:'numeric', month:'short', day:'numeric' }) : '—' %></td>
                         <td class="actions-cell">
                             <button class="btn-icon btn-edit-member" data-member='<%- JSON.stringify(m).replace(/'/g, "&#39;") %>'>
                                 <i class="fas fa-pen"></i>
                             </button>
-
-                            <form action="/members/delete/<%= m.id %>" method="POST" onsubmit="return confirm('Remove this member?')" style="display:inline;">
+                            <form action="/members/delete/<%= m.id %>" method="POST" onsubmit="return confirm('Remove this member?')" class="form-inline">
                                 <button type="submit" class="btn-icon btn-icon--danger">
                                     <i class="fas fa-trash"></i>
                                 </button>
@@ -68,6 +104,7 @@
                     <% }) %>
                 </tbody>
             </table>
+            <p id="arde-no-results" class="no-data" style="display:none;">No members match your search.</p>
             <% } %>
         </div>
 
@@ -76,18 +113,26 @@
         <!-- ============================= -->
         <div class="tab-panel" id="tab-honorary">
             <div class="panel-header">
-                <h3><%= honorary.length %> Honorary Members</h3>
-                <button class="btn-add" onclick="openModal('createHonoraryModal')">
-                    <i class="fas fa-plus"></i> Add Honorary Member
-                </button>
+                <h3><span id="honorary-count"><%= honorary.length %></span> Honorary Members</h3>
+                <div class="filter-bar">
+                    <div class="search-box">
+                        <i class="fa fa-search"></i>
+                        <input type="text" id="honorary-search" placeholder="Search name or title…" oninput="filterHonorary()">
+                    </div>
+                    <button class="btn-add" onclick="openModal('createHonoraryModal')">
+                        <i class="fas fa-plus"></i> Add Honorary Member
+                    </button>
+                </div>
             </div>
 
             <% if (honorary.length === 0) { %>
                 <p class="no-data">No honorary members added yet.</p>
             <% } else { %>
-            <div class="member-card-grid">
+            <div class="member-card-grid" id="honorary-grid">
                 <% honorary.forEach(h => { %>
-                <div class="member-card">
+                <div class="member-card"
+                     data-name="<%= h.full_name.toLowerCase() %>"
+                     data-title="<%= (h.title || '').toLowerCase() %>">
                     <div class="member-card-photo">
                         <% if (h.image_path) { %>
                             <img src="<%= h.image_path %>" alt="<%= h.full_name %>">
@@ -111,6 +156,7 @@
                 </div>
                 <% }) %>
             </div>
+            <p id="honorary-no-results" class="no-data" style="display:none;">No honorary members match your search.</p>
             <% } %>
         </div>
 
@@ -120,13 +166,25 @@
         <div class="tab-panel" id="tab-executive">
             <div class="panel-header">
                 <h3>Executive Committee</h3>
-                <div class="panel-header-actions">
-                    <button class="btn-add btn-add--secondary" onclick="openModal('manageGroupsModal')">
-                        <i class="fas fa-layer-group"></i> Manage Groups
-                    </button>
-                    <button class="btn-add" onclick="openModal('createExecutiveModal')">
-                        <i class="fas fa-plus"></i> Add Member
-                    </button>
+                <div class="filter-bar">
+                    <div class="search-box">
+                        <i class="fa fa-search"></i>
+                        <input type="text" id="exec-search" placeholder="Search name or title…" oninput="filterExec()">
+                    </div>
+                    <select id="exec-group-filter" onchange="filterExec()" class="filter-select">
+                        <option value="all">All Groups</option>
+                        <% groups.forEach(g => { %>
+                        <option value="<%= g.id %>"><%= g.group_name %></option>
+                        <% }) %>
+                    </select>
+                    <div class="panel-header-actions">
+                        <button class="btn-add btn-add--secondary" onclick="openModal('manageGroupsModal')">
+                            <i class="fas fa-layer-group"></i> Manage Groups
+                        </button>
+                        <button class="btn-add" onclick="openModal('createExecutiveModal')">
+                            <i class="fas fa-plus"></i> Add Member
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -138,15 +196,19 @@
             </div>
             <% } %>
 
+            <div id="exec-groups-container">
             <% groupedExecutives.forEach(group => { %>
-            <div class="exec-group-block">
+            <div class="exec-group-block" data-group-id="<%= group.id %>">
                 <h3 class="exec-group-title"><%= group.group_name %></h3>
                 <% if (group.members.length === 0) { %>
                     <p class="no-data-inline">No members in this group yet.</p>
                 <% } else { %>
                 <div class="member-card-grid">
                     <% group.members.forEach(member => { %>
-                    <div class="member-card">
+                    <div class="member-card exec-card"
+                         data-name="<%= member.full_name.toLowerCase() %>"
+                         data-title="<%= (member.title || '').toLowerCase() %>"
+                         data-group="<%= member.group_id %>">
                         <% if (member.is_president) { %><span class="president-badge"><i class="fas fa-crown"></i></span><% } %>
                         <div class="member-card-photo">
                             <% if (member.image_path) { %>
@@ -174,6 +236,119 @@
                 <% } %>
             </div>
             <% }) %>
+            </div>
+            <p id="exec-no-results" class="no-data" style="display:none;">No members match your search.</p>
+        </div>
+
+        <!-- ============================= -->
+        <!-- TAB 4: APPLICATIONS -->
+        <!-- ============================= -->
+        <div class="tab-panel" id="tab-applications">
+            <%
+                const appPending  = applications.filter(a => a.status === 'pending');
+                const appAccepted = applications.filter(a => a.status === 'accepted');
+            %>
+
+            <div class="panel-header">
+                <h3>Membership Applications</h3>
+                <div class="filter-bar">
+                    <div class="search-box">
+                        <i class="fa fa-search"></i>
+                        <input type="text" id="app-search" placeholder="Search name or email…" oninput="filterApps()">
+                    </div>
+                    <select id="app-status-filter" onchange="filterApps()" class="filter-select">
+                        <option value="all">All Statuses</option>
+                        <option value="pending">Pending</option>
+                        <option value="accepted">Accepted</option>
+                        <option value="declined">Declined</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="app-stats-row">
+                <div class="stat-box stat-box--total">
+                    <div class="stat-num"><%= applications.length %></div>
+                    <div class="stat-lbl">Total Applications</div>
+                </div>
+                <div class="stat-box stat-box--pending">
+                    <div class="stat-num stat-num--pending"><%= appPending.length %></div>
+                    <div class="stat-lbl">Pending Review</div>
+                </div>
+                <div class="stat-box stat-box--accepted">
+                    <div class="stat-num stat-num--accepted"><%= appAccepted.length %></div>
+                    <div class="stat-lbl">Accepted Members</div>
+                </div>
+            </div>
+
+            <% if (applications.length === 0) { %>
+                <p class="no-data"><i class="fas fa-inbox"></i> No membership applications yet.</p>
+            <% } else { %>
+            <div class="applications-list" id="app-list">
+                <% applications.forEach(app => { %>
+                <div class="application-card"
+                     data-name="<%= app.full_name.toLowerCase() %>"
+                     data-email="<%= (app.personal_email || '').toLowerCase() %>"
+                     data-status="<%= app.status %>">
+
+                    <div class="applicant-header">
+                        <div class="applicant-avatar">
+                            <%= app.full_name.charAt(0).toUpperCase() %>
+                        </div>
+                        <div class="applicant-info">
+                            <h4 class="applicant-name">
+                                <%= app.title ? app.title + ' ' : '' %><%= app.full_name %>
+                                <span class="app-type-badge"><%= app.membership_type %></span>
+                            </h4>
+                            <p class="applicant-contact">
+                                <i class="fas fa-envelope"></i> <%= app.personal_email %>
+                                <% if (app.mobile_number) { %> &nbsp;·&nbsp; <i class="fas fa-phone"></i> <%= app.mobile_number %><% } %>
+                            </p>
+                        </div>
+                        <span class="app-status-badge app-status-badge--<%= app.status %>"><%= app.status %></span>
+                    </div>
+
+                    <div class="app-details-grid">
+                        <div><span class="app-detail-label">Nationality</span><%= app.nationality || '—' %></div>
+                        <div><span class="app-detail-label">Date of Birth</span><%= app.date_of_birth ? new Date(app.date_of_birth).toLocaleDateString('en-SG', {year:'numeric',month:'short',day:'numeric'}) : '—' %></div>
+                        <div><span class="app-detail-label">Hotel</span><%= app.hotel_name || '—' %></div>
+                        <div><span class="app-detail-label">Current Position</span><%= app.current_position || '—' %></div>
+                        <div><span class="app-detail-label">Years in Position</span><%= app.years_in_position || '—' %></div>
+                        <div><span class="app-detail-label">Business Email</span><%= app.business_email || '—' %></div>
+                        <div><span class="app-detail-label">Telephone</span><%= app.telephone_number || '—' %></div>
+                        <div><span class="app-detail-label">Residential Address</span><%= app.residential_address || '—' %></div>
+                        <div><span class="app-detail-label">Business Address</span><%= app.business_address || '—' %></div>
+                    </div>
+
+                    <div class="app-footer">
+                        <% if (app.status === 'accepted') { %>
+                            <span class="app-member-id"><i class="fas fa-id-card"></i> Member ID: <strong><%= app.member_id || app.existing_member_id || '—' %></strong></span>
+                            <form action="/membership/delete/<%= app.id %>" method="POST" onsubmit="return confirm('Delete this application record?')" class="form-inline">
+                                <button type="submit" class="btn-app-delete"><i class="fas fa-trash"></i> Delete</button>
+                            </form>
+                        <% } else if (app.status === 'declined') { %>
+                            <span class="app-declined-label"><i class="fas fa-xmark"></i> Declined</span>
+                            <form action="/membership/delete/<%= app.id %>" method="POST" onsubmit="return confirm('Delete this application record?')" class="form-inline">
+                                <button type="submit" class="btn-app-delete"><i class="fas fa-trash"></i> Delete</button>
+                            </form>
+                        <% } else { %>
+                            <% if (app.membership_type === 'Renew') { %>
+                                <span class="app-renew-note"><i class="fas fa-rotate"></i> Renewing ID: <strong><%= app.existing_member_id || '—' %></strong></span>
+                            <% } %>
+                            <form action="/membership/accept/<%= app.id %>" method="POST"
+                                  onsubmit="return confirm('Accept this application? This will auto-add them to ARDE Members.');" class="form-inline">
+                                <button type="submit" class="btn-app-accept"><i class="fas fa-check"></i> Accept</button>
+                            </form>
+                            <form action="/membership/decline/<%= app.id %>" method="POST"
+                                  onsubmit="return confirm('Decline this application?');" class="form-inline">
+                                <button type="submit" class="btn-app-decline"><i class="fas fa-xmark"></i> Decline</button>
+                            </form>
+                        <% } %>
+                    </div>
+                </div>
+                <% }) %>
+            </div>
+            <p id="app-no-results" class="no-data" style="display:none;">No applications match your search.</p>
+            <% } %>
         </div>
 
         <!-- ============================================= -->
@@ -381,27 +556,31 @@
 
     <script>
         // ===== TABS =====
+        function activateTab(tabKey) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+            const btn = document.querySelector(`.tab-btn[data-tab="${tabKey}"]`);
+            const panel = document.getElementById('tab-' + tabKey);
+            if (btn && panel) {
+                btn.classList.add('active');
+                panel.classList.add('active');
+            }
+        }
+
         document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.addEventListener('click', () => {
-                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-                document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-                btn.classList.add('active');
-                document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
-                localStorage.setItem('membersActiveTab', btn.dataset.tab); // save it
+                activateTab(btn.dataset.tab);
+                localStorage.setItem('membersActiveTab', btn.dataset.tab);
             });
         });
 
-        // Restore active tab after form submit
-        const savedTab = localStorage.getItem('membersActiveTab');
-        if (savedTab) {
-            const targetBtn = document.querySelector(`.tab-btn[data-tab="${savedTab}"]`);
-            const targetPanel = document.getElementById('tab-' + savedTab);
-            if (targetBtn && targetPanel) {
-                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-                document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-                targetBtn.classList.add('active');
-                targetPanel.classList.add('active');
-            }
+        // URL param takes priority (used after accept/decline redirects), then localStorage
+        const urlTab = new URLSearchParams(window.location.search).get('tab');
+        if (urlTab) {
+            activateTab(urlTab);
+        } else {
+            const savedTab = localStorage.getItem('membersActiveTab');
+            if (savedTab) activateTab(savedTab);
         }
 
         // ===== MODAL HELPERS =====
@@ -475,6 +654,79 @@
         document.getElementById('edit-is-president').addEventListener('change', function() {
             document.getElementById('edit-president-vision-wrap').style.display = this.checked ? 'block' : 'none';
         });
+
+        // ===== SEARCH & FILTER =====
+
+        function filterArde() {
+            const q = document.getElementById('arde-search').value.toLowerCase();
+            const s = document.getElementById('arde-status-filter').value;
+            const rows = document.querySelectorAll('#arde-tbody tr');
+            let visible = 0;
+            rows.forEach(row => {
+                const nameMatch = row.dataset.name.includes(q) || row.dataset.company.includes(q);
+                const statusMatch = s === 'all' || row.dataset.vstatus === s;
+                const show = nameMatch && statusMatch;
+                row.style.display = show ? '' : 'none';
+                if (show) visible++;
+            });
+            document.getElementById('arde-count').textContent = visible;
+            const noRes = document.getElementById('arde-no-results');
+            if (noRes) noRes.style.display = visible === 0 ? '' : 'none';
+        }
+
+        function filterHonorary() {
+            const q = document.getElementById('honorary-search').value.toLowerCase();
+            const cards = document.querySelectorAll('#honorary-grid .member-card');
+            let visible = 0;
+            cards.forEach(card => {
+                const show = card.dataset.name.includes(q) || card.dataset.title.includes(q);
+                card.style.display = show ? '' : 'none';
+                if (show) visible++;
+            });
+            document.getElementById('honorary-count').textContent = visible;
+            const noRes = document.getElementById('honorary-no-results');
+            if (noRes) noRes.style.display = visible === 0 ? '' : 'none';
+        }
+
+        function filterExec() {
+            const q = document.getElementById('exec-search').value.toLowerCase();
+            const g = document.getElementById('exec-group-filter').value;
+            let totalVisible = 0;
+            document.querySelectorAll('#exec-groups-container .exec-group-block').forEach(block => {
+                const groupId = block.dataset.groupId;
+                const groupMatch = g === 'all' || groupId === g;
+                let groupVisible = 0;
+                block.querySelectorAll('.exec-card').forEach(card => {
+                    const textMatch = card.dataset.name.includes(q) || card.dataset.title.includes(q);
+                    const show = groupMatch && textMatch;
+                    card.style.display = show ? '' : 'none';
+                    if (show) groupVisible++;
+                });
+                // Hide entire group block if none of its cards are visible
+                block.style.display = (groupMatch && groupVisible > 0) || (groupMatch && q === '' && g === 'all') ? '' : 'none';
+                // If no search text but group filter active, show block even if cards hidden by other means
+                if (groupMatch && groupVisible === 0 && q === '') block.style.display = '';
+                totalVisible += groupVisible;
+            });
+            const noRes = document.getElementById('exec-no-results');
+            if (noRes) noRes.style.display = totalVisible === 0 ? '' : 'none';
+        }
+
+        function filterApps() {
+            const q = document.getElementById('app-search').value.toLowerCase();
+            const s = document.getElementById('app-status-filter').value;
+            const cards = document.querySelectorAll('#app-list .application-card');
+            let visible = 0;
+            cards.forEach(card => {
+                const textMatch = card.dataset.name.includes(q) || card.dataset.email.includes(q);
+                const statusMatch = s === 'all' || card.dataset.status === s;
+                const show = textMatch && statusMatch;
+                card.style.display = show ? '' : 'none';
+                if (show) visible++;
+            });
+            const noRes = document.getElementById('app-no-results');
+            if (noRes) noRes.style.display = visible === 0 ? '' : 'none';
+        }
     </script>
 </body>
 </html>

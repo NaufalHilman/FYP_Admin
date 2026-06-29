@@ -272,7 +272,18 @@ app.get('/members', isAuthenticated, async (req, res) => {
 
         const president = executives.find(e => e.is_president);
 
-        res.render('members', { members, honorary, groupedExecutives, president, groups });
+        const [applications] = await db.query(
+            `SELECT * FROM membership_applications
+             WHERE NOT (membership_type = 'Renew' AND status = 'accepted')
+             ORDER BY (status = 'pending') DESC, submitted_at DESC`
+        );
+
+        res.render('members', {
+            members, honorary, groupedExecutives, president, groups,
+            applications,
+            error: req.query.error || null,
+            notice: req.query.notice || null
+        });
     } catch (err) {
         console.error(err);
         res.status(500).send('Server Error');
@@ -283,18 +294,43 @@ app.get('/members', isAuthenticated, async (req, res) => {
    MEMBERSHIP APPLICATIONS (review + approve)
 ===================================================== */
 
-// Generate a random, zero-padded 5-digit ID that isn't already taken
+// Generate a random, zero-padded 5-digit ID that isn't taken in either table
 async function generateMemberId() {
-    for (let attempt = 0; attempt < 20; attempt++) {
+    for (let attempt = 0; attempt < 50; attempt++) {
         const candidate = String(Math.floor(Math.random() * 100000)).padStart(5, '0');
-        const [rows] = await db.query(
-            'SELECT id FROM membership_applications WHERE member_id = ?',
+        const [[inApps]] = await db.query(
+            'SELECT COUNT(*) as n FROM membership_applications WHERE member_id = ?',
             [candidate]
         );
-        if (rows.length === 0) return candidate;
+        const [[inMembers]] = await db.query(
+            'SELECT COUNT(*) as n FROM members WHERE member_id = ?',
+            [candidate]
+        );
+        if (inApps.n === 0 && inMembers.n === 0) return candidate;
     }
-    throw new Error('Could not generate a unique member ID');
+    throw new Error('Could not generate a unique member ID after 50 attempts');
 }
+
+// Backfill any existing members that have no member_id yet
+async function backfillMemberIds() {
+    try {
+        const [nullMembers] = await db.query(
+            'SELECT id FROM members WHERE member_id IS NULL ORDER BY id ASC'
+        );
+        for (const row of nullMembers) {
+            const newId = await generateMemberId();
+            await db.query('UPDATE members SET member_id = ? WHERE id = ?', [newId, row.id]);
+        }
+        if (nullMembers.length > 0) {
+            console.log(`Backfilled member_id for ${nullMembers.length} existing member(s).`);
+        }
+    } catch (err) {
+        console.error('Error during member_id backfill:', err);
+    }
+}
+
+// Run backfill on startup
+backfillMemberIds();
 
 // List all applications
 app.get('/membership', isAuthenticated, async (req, res) => {
@@ -318,25 +354,42 @@ app.get('/membership', isAuthenticated, async (req, res) => {
 // Accept an application
 app.post('/membership/accept/:id', isAuthenticated, async (req, res) => {
     try {
-        const [[app]] = await db.query(
+        const [[application]] = await db.query(
             'SELECT * FROM membership_applications WHERE id = ?',
             [req.params.id]
         );
-        if (!app || app.status !== 'pending') {
-            return res.redirect('/membership?error=' + encodeURIComponent('Application not found or already processed.'));
+        if (!application || application.status !== 'pending') {
+            return res.redirect('/members?tab=applications&error=' + encodeURIComponent('Application not found or already processed.'));
         }
 
-        if (app.membership_type === 'Renew') {
-            const existing = (app.existing_member_id || '').trim();
-            const [match] = await db.query(
-                "SELECT id FROM membership_applications WHERE member_id = ? AND status = 'accepted'",
+        // valid_till = 1 year from today
+        const validTill = new Date();
+        validTill.setFullYear(validTill.getFullYear() + 1);
+        const validTillStr = validTill.toISOString().split('T')[0];
+
+        if (application.membership_type === 'Renew') {
+            const existing = (application.existing_member_id || '').trim();
+
+            // Check the member exists in the members table
+            const [[existingMember]] = await db.query(
+                'SELECT * FROM members WHERE member_id = ?',
                 [existing]
             );
-            if (match.length === 0) {
-                return res.redirect('/membership?error=' + encodeURIComponent('Cannot accept renewal: ID "' + existing + '" does not match any existing member.'));
+            if (!existingMember) {
+                return res.redirect('/members?tab=applications&error=' + encodeURIComponent(
+                    `Cannot accept renewal: member ID "${existing}" not found.`
+                ));
             }
 
-            // Overwrite the original member record with the renewal's latest details
+            // Update the members table with latest details + refresh valid_till
+            await db.query(
+                `UPDATE members SET
+                    full_name = ?, company = ?, valid_till = ?
+                 WHERE member_id = ?`,
+                [application.full_name, application.hotel_name || null, validTillStr, existing]
+            );
+
+            // Overwrite the original application record with renewed details (audit)
             await db.query(
                 `UPDATE membership_applications SET
                     title = ?, full_name = ?, nationality = ?, date_of_birth = ?,
@@ -345,35 +398,49 @@ app.post('/membership/accept/:id', isAuthenticated, async (req, res) => {
                     telephone_number = ?, current_position = ?, years_in_position = ?,
                     opt_email_updates = ?, opt_event_sms = ?, opt_admin_responsibility = ?,
                     consent = ?
-                 WHERE id = ?`,
+                 WHERE member_id = ? AND status = 'accepted'`,
                 [
-                    app.title, app.full_name, app.nationality, app.date_of_birth,
-                    app.residential_address, app.personal_email, app.mobile_number,
-                    app.hotel_name, app.business_address, app.business_email,
-                    app.telephone_number, app.current_position, app.years_in_position,
-                    app.opt_email_updates, app.opt_event_sms, app.opt_admin_responsibility,
-                    app.consent, match[0].id
+                    application.title, application.full_name, application.nationality, application.date_of_birth,
+                    application.residential_address, application.personal_email, application.mobile_number,
+                    application.hotel_name, application.business_address, application.business_email,
+                    application.telephone_number, application.current_position, application.years_in_position,
+                    application.opt_email_updates, application.opt_event_sms, application.opt_admin_responsibility,
+                    application.consent, existing
                 ]
             );
 
-            // Mark the renewal row itself as accepted (kept as an audit record)
+            // Mark the renewal row itself as accepted
             await db.query(
                 "UPDATE membership_applications SET status = 'accepted', reviewed_at = NOW() WHERE id = ?",
-                [app.id]
+                [application.id]
             );
-            return res.redirect('/membership?notice=' + encodeURIComponent('Renewal accepted for member ' + existing + '. Details updated.'));
+
+            return res.redirect('/members?tab=applications&notice=' + encodeURIComponent(
+                `Renewal accepted for ${application.full_name} (ID: ${existing}). Valid till ${validTillStr}.`
+            ));
         }
 
         // New application → mint a fresh unique ID
         const newId = await generateMemberId();
+
+        // Save to membership_applications
         await db.query(
             "UPDATE membership_applications SET status = 'accepted', member_id = ?, reviewed_at = NOW() WHERE id = ?",
-            [newId, app.id]
+            [newId, application.id]
         );
-        res.redirect('/membership?notice=' + encodeURIComponent('Accepted. New member ID: ' + newId));
+
+        // Auto-create the members row
+        await db.query(
+            'INSERT INTO members (full_name, company, valid_till, member_id) VALUES (?, ?, ?, ?)',
+            [application.full_name, application.hotel_name || null, validTillStr, newId]
+        );
+
+        res.redirect('/members?tab=applications&notice=' + encodeURIComponent(
+            `Accepted. ${application.full_name} added to ARDE Members (ID: ${newId}, valid till ${validTillStr}).`
+        ));
     } catch (err) {
         console.error(err);
-        res.redirect('/membership?error=' + encodeURIComponent('Something went wrong while accepting.'));
+        res.redirect('/members?tab=applications&error=' + encodeURIComponent('Something went wrong while accepting.'));
     }
 });
 
@@ -384,10 +451,24 @@ app.post('/membership/decline/:id', isAuthenticated, async (req, res) => {
             "UPDATE membership_applications SET status = 'declined', reviewed_at = NOW() WHERE id = ? AND status = 'pending'",
             [req.params.id]
         );
-        res.redirect('/membership?notice=' + encodeURIComponent('Application declined.'));
+        res.redirect('/members?tab=applications&notice=' + encodeURIComponent('Application declined.'));
     } catch (err) {
         console.error(err);
-        res.redirect('/membership?error=' + encodeURIComponent('Something went wrong while declining.'));
+        res.redirect('/members?tab=applications&error=' + encodeURIComponent('Something went wrong while declining.'));
+    }
+});
+
+// Delete an application (only allowed once processed — not pending)
+app.post('/membership/delete/:id', isAuthenticated, async (req, res) => {
+    try {
+        await db.query(
+            "DELETE FROM membership_applications WHERE id = ? AND status != 'pending'",
+            [req.params.id]
+        );
+        res.redirect('/members?tab=applications&notice=' + encodeURIComponent('Application deleted.'));
+    } catch (err) {
+        console.error(err);
+        res.redirect('/members?tab=applications&error=' + encodeURIComponent('Could not delete application.'));
     }
 });
 
@@ -397,11 +478,12 @@ app.post('/membership/decline/:id', isAuthenticated, async (req, res) => {
 app.post('/members/create', isAuthenticated, async (req, res) => {
     const { full_name, company, valid_till } = req.body;
     try {
+        const memberId = await generateMemberId();
         await db.query(
-            'INSERT INTO members (full_name, company, valid_till) VALUES (?, ?, ?)',
-            [full_name, company, valid_till]
+            'INSERT INTO members (full_name, company, valid_till, member_id) VALUES (?, ?, ?, ?)',
+            [full_name, company || null, valid_till || null, memberId]
         );
-        res.redirect('/members');
+        res.redirect('/members?notice=' + encodeURIComponent(`Member added. ID: ${memberId}`));
     } catch (err) {
         console.error(err);
         res.status(500).send('Error creating member');
@@ -581,6 +663,234 @@ app.post('/members/executive/delete/:id', isAuthenticated, async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).send('Error deleting executive member');
+    }
+});
+
+// =====================================================
+// AWARDS — ADMIN ROUTES
+// =====================================================
+
+// List all awards
+app.get('/awards', isAuthenticated, async (req, res) => {
+    try {
+        const [awards] = await db.query('SELECT * FROM awards ORDER BY deadline DESC');
+
+        // Registration counts per award
+        const [counts] = await db.query(
+            'SELECT award_id, COUNT(*) as count FROM award_registrations GROUP BY award_id'
+        );
+        const regCounts = {};
+        counts.forEach(r => regCounts[r.award_id] = r.count);
+
+        // Winner counts per award
+        const [winnerRows] = await db.query(
+            'SELECT award_id, COUNT(*) as count FROM award_winners GROUP BY award_id'
+        );
+        const winnerCounts = {};
+        winnerRows.forEach(r => winnerCounts[r.award_id] = r.count);
+
+        res.render('awards', {
+            awards,
+            regCounts,
+            winnerCounts,
+            error: req.query.error || null,
+            notice: req.query.notice || null
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Server Error');
+    }
+});
+
+// Create award
+app.post('/awards/create', isAuthenticated, uploadImage.single('image'), async (req, res) => {
+    const { title, description, deadline, max_winners } = req.body;
+    const image_path = req.file ? req.file.path : null;
+    try {
+        await db.query(
+            'INSERT INTO awards (title, description, image_path, deadline, max_winners) VALUES (?, ?, ?, ?, ?)',
+            [title, description, image_path, deadline, max_winners || 1]
+        );
+        res.redirect('/awards');
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Error creating award');
+    }
+});
+
+// Update award
+app.post('/awards/update/:id', isAuthenticated, uploadImage.single('image'), async (req, res) => {
+    const { title, description, deadline, max_winners } = req.body;
+    const { id } = req.params;
+    try {
+        if (req.file) {
+            await db.query(
+                'UPDATE awards SET title=?, description=?, deadline=?, max_winners=?, image_path=? WHERE id=?',
+                [title, description, deadline, max_winners || 1, req.file.path, id]
+            );
+        } else {
+            await db.query(
+                'UPDATE awards SET title=?, description=?, deadline=?, max_winners=? WHERE id=?',
+                [title, description, deadline, max_winners || 1, id]
+            );
+        }
+        res.redirect('/awards');
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Error updating award');
+    }
+});
+
+// Delete award
+app.post('/awards/delete/:id', isAuthenticated, async (req, res) => {
+    try {
+        await db.query('DELETE FROM awards WHERE id = ?', [req.params.id]);
+        res.redirect('/awards');
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Error deleting award');
+    }
+});
+
+// View registrations for an award
+app.get('/awards/registrations/:id', isAuthenticated, async (req, res) => {
+    try {
+        const [[award]] = await db.query('SELECT * FROM awards WHERE id = ?', [req.params.id]);
+        if (!award) return res.status(404).send('Award not found');
+
+        const [registrations] = await db.query(
+            'SELECT * FROM award_registrations WHERE award_id = ? ORDER BY id ASC',
+            [req.params.id]
+        );
+        const [winners] = await db.query(
+            "SELECT * FROM award_winners WHERE award_id = ? AND role = 'winner' ORDER BY id ASC",
+            [req.params.id]
+        );
+        const [runnerUps] = await db.query(
+            "SELECT * FROM award_winners WHERE award_id = ? AND role = 'runner_up' ORDER BY id ASC",
+            [req.params.id]
+        );
+
+        // IDs already chosen (to disable buttons in registrations tab)
+        const chosenIds = [...winners, ...runnerUps].map(w => w.member_id);
+
+        res.render('award-registration', {
+            award,
+            registrations,
+            winners,
+            runnerUps,
+            chosenIds,
+            tab: req.query.tab || 'registrations',
+            error: req.query.error || null,
+            notice: req.query.notice || null
+        });
+    } catch (err) {
+        console.error('[/awards/registrations] DB error:', err.message);
+        res.status(500).send(`Server Error: ${err.message}`);
+    }
+});
+
+// Choose a winner or runner-up from registrations
+app.post('/awards/winners/choose/:award_id', isAuthenticated, async (req, res) => {
+    const { award_id } = req.params;
+    const { member_id, role } = req.body;
+    const roleVal = role === 'runner_up' ? 'runner_up' : 'winner';
+    try {
+        const [[award]] = await db.query('SELECT * FROM awards WHERE id = ?', [award_id]);
+
+        // Check winner cap (runner-ups are uncapped)
+        if (roleVal === 'winner') {
+            const [[{ count }]] = await db.query(
+                "SELECT COUNT(*) as count FROM award_winners WHERE award_id = ? AND role = 'winner'",
+                [award_id]
+            );
+            if (count >= award.max_winners) {
+                return res.redirect(`/awards/registrations/${award_id}?error=` +
+                    encodeURIComponent(`Maximum of ${award.max_winners} winner(s) already chosen.`));
+            }
+        }
+
+        // Check not already chosen
+        const [[already]] = await db.query(
+            'SELECT id FROM award_winners WHERE award_id = ? AND member_id = ?',
+            [award_id, member_id]
+        );
+        if (already) {
+            return res.redirect(`/awards/registrations/${award_id}?error=` +
+                encodeURIComponent('This member has already been chosen for this award.'));
+        }
+
+        // Get their name from registration
+        const [[reg]] = await db.query(
+            'SELECT * FROM award_registrations WHERE award_id = ? AND member_id = ?',
+            [award_id, member_id]
+        );
+        if (!reg) {
+            return res.redirect(`/awards/registrations/${award_id}?error=` +
+                encodeURIComponent('Registration not found.'));
+        }
+
+        // Try to auto-fetch hotel from members table
+        let hotel = null;
+        const [[member]] = await db.query(
+            'SELECT hotel_name FROM members WHERE member_id = ?', [member_id]
+        ).catch(() => [[null]]);
+        if (member && member.hotel_name) hotel = member.hotel_name;
+
+        await db.query(
+            'INSERT INTO award_winners (award_id, member_id, full_name, hotel, role) VALUES (?, ?, ?, ?, ?)',
+            [award_id, member_id, reg.full_name, hotel, roleVal]
+        );
+
+        const label = roleVal === 'runner_up' ? 'runner-up' : 'winner';
+        res.redirect(`/awards/registrations/${award_id}?tab=winners&notice=` +
+            encodeURIComponent(`${reg.full_name} added as ${label}.`));
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Error choosing winner');
+    }
+});
+
+// Edit a winner / runner-up (change role, name, or hotel)
+app.post('/awards/winners/edit/:winner_id', isAuthenticated, async (req, res) => {
+    const { winner_id } = req.params;
+    const { award_id, full_name, hotel, role } = req.body;
+    const roleVal = role === 'runner_up' ? 'runner_up' : 'winner';
+    try {
+        // If promoting to winner, check cap (exclude this record from count)
+        if (roleVal === 'winner') {
+            const [[award]] = await db.query('SELECT * FROM awards WHERE id = ?', [award_id]);
+            const [[{ count }]] = await db.query(
+                "SELECT COUNT(*) as count FROM award_winners WHERE award_id = ? AND role = 'winner' AND id != ?",
+                [award_id, winner_id]
+            );
+            if (count >= award.max_winners) {
+                return res.redirect(`/awards/registrations/${award_id}?tab=winners&error=` +
+                    encodeURIComponent(`Cannot promote to winner: ${award.max_winners} winner(s) already set.`));
+            }
+        }
+        await db.query(
+            'UPDATE award_winners SET full_name = ?, hotel = ?, role = ? WHERE id = ?',
+            [full_name, hotel || null, roleVal, winner_id]
+        );
+        res.redirect(`/awards/registrations/${award_id}?tab=winners&notice=` +
+            encodeURIComponent('Updated successfully.'));
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Error editing winner');
+    }
+});
+
+// Remove a winner / runner-up
+app.post('/awards/winners/remove/:winner_id', isAuthenticated, async (req, res) => {
+    const { award_id } = req.body;
+    try {
+        await db.query('DELETE FROM award_winners WHERE id = ?', [req.params.winner_id]);
+        res.redirect(`/awards/registrations/${award_id}?tab=winners&notice=` +
+            encodeURIComponent('Removed successfully.'));
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Error removing winner');
     }
 });
 
