@@ -251,8 +251,10 @@ app.post('/events/delete/:id', isAuthenticated, async (req, res) => {
 
 app.post('/careers/applications/delete/:id', isAuthenticated, async (req, res) => {
     try {
+        const [[app]] = await db.query('SELECT career_id FROM applications WHERE id = ?', [req.params.id]);
         await db.query('DELETE FROM applications WHERE id = ?', [req.params.id]);
-        res.redirect('back');
+        const dest = app ? `/careers/applications/${app.career_id}` : '/careers';
+        res.redirect(dest);
     } catch (err) {
         console.error(err);
         res.status(500).send('Error deleting application');
