@@ -3,9 +3,95 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Events</title>
+    <title>Events Management</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/styles/careers.css">
+    <style>
+        /* ── URGENCY STRIP ── */
+        .event-urgency {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 7px 12px;
+            border-radius: 6px 6px 0 0;
+            margin: -18px -18px 14px -18px;
+            font-size: 11.5px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .urgency--today    { background: #fde8e8; color: #c0392b; border-bottom: 2px solid #e74c3c; }
+        .urgency--tomorrow { background: #fef0e6; color: #d35400; border-bottom: 2px solid #e67e22; }
+        .urgency--soon     { background: #fef9e6; color: #b7860b; border-bottom: 2px solid #FFCB05; }
+        .urgency--upcoming { background: #eef0fb; color: #27247B; border-bottom: 2px solid #27247B; }
+        .urgency--past     { background: #f5f5f5; color: #aaa;    border-bottom: 2px solid #ddd; }
+
+        /* Card border-left urgency accent */
+        .job-card { border-left: 4px solid transparent; }
+        .job-card.card--today    { border-left-color: #e74c3c; }
+        .job-card.card--tomorrow { border-left-color: #e67e22; }
+        .job-card.card--soon     { border-left-color: #FFCB05; }
+        .job-card.card--upcoming { border-left-color: #27247B; }
+        .job-card.card--past     { border-left-color: #ddd; opacity: 0.65; }
+
+        /* "NEXT UP" crown badge */
+        .next-up-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: #27247B;
+            color: #FFCB05;
+            font-size: 10.5px;
+            font-weight: 800;
+            padding: 2px 8px;
+            border-radius: 20px;
+            letter-spacing: 0.4px;
+        }
+
+        .next-up-badge i { font-size: 10px; }
+
+        /* Countdown date display */
+        .urgency-date {
+            font-weight: 400;
+            font-size: 10.5px;
+            opacity: 0.75;
+            text-transform: none;
+            letter-spacing: 0;
+        }
+
+        /* Section divider between upcoming / past */
+        .grid-section-label {
+            grid-column: 1 / -1;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 8px 0 4px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: #888;
+        }
+
+        .grid-section-label::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #e0e0e0;
+        }
+
+        /* Sidebar date chip */
+        .app-date-chip {
+            font-size: 10.5px;
+            font-weight: 600;
+            color: #888;
+            white-space: nowrap;
+        }
+
+        .app-date-chip.urgent { color: #e74c3c; }
+        .app-date-chip.soon   { color: #d35400; }
+    </style>
 </head>
 <body>
     <%- include('../partials/sidebar') %>
@@ -15,14 +101,54 @@
     function toDateInput(d) {
         if (!d) return '';
         const dt = new Date(d);
-        const y = dt.getFullYear();
-        const m = String(dt.getMonth() + 1).padStart(2, '0');
-        const day = String(dt.getDate()).padStart(2, '0');
-        return `${y}-${m}-${day}`;
+        const y  = dt.getFullYear();
+        const m  = String(dt.getMonth() + 1).padStart(2, '0');
+        const dy = String(dt.getDate()).padStart(2, '0');
+        return `${y}-${m}-${dy}`;
     }
-    const today = new Date(); today.setHours(0, 0, 0, 0);
+
+    // Days between today and event_date (negative = past)
+    function daysUntil(d) {
+        const today = new Date(); today.setHours(0,0,0,0);
+        const ev    = new Date(d); ev.setHours(0,0,0,0);
+        return Math.round((ev - today) / 86400000);
+    }
+
+    function urgencyClass(days) {
+        if (days < 0)  return 'past';
+        if (days === 0) return 'today';
+        if (days === 1) return 'tomorrow';
+        if (days <= 7) return 'soon';
+        return 'upcoming';
+    }
+
+    function urgencyLabel(days) {
+        if (days < 0)  return 'Past';
+        if (days === 0) return 'Today!';
+        if (days === 1) return 'Tomorrow';
+        if (days <= 7) return `In ${days} days`;
+        if (days <= 14) return 'In 2 weeks';
+        if (days <= 30) return 'This month';
+        return 'Upcoming';
+    }
+
+    function fmtDate(d) {
+        return new Date(d).toLocaleDateString('en-SG', { day:'numeric', month:'short', year:'numeric' });
+    }
+
+    const today = new Date(); today.setHours(0,0,0,0);
     const upcomingCount = events.filter(e => new Date(e.event_date) >= today).length;
     const featuredCount = events.filter(e => e.is_featured).length;
+
+    // Sort: upcoming ASC first, then past DESC
+    const upcoming = events.filter(e => daysUntil(e.event_date) >= 0)
+                           .sort((a,b) => new Date(a.event_date) - new Date(b.event_date));
+    const past     = events.filter(e => daysUntil(e.event_date) < 0)
+                           .sort((a,b) => new Date(b.event_date) - new Date(a.event_date));
+    const sorted   = [...upcoming, ...past];
+
+    // Sidebar: all events sorted by date ASC (upcoming first)
+    const sidebarEvents = [...events].sort((a,b) => new Date(a.event_date) - new Date(b.event_date));
     %>
 
     <main class="content">
@@ -30,14 +156,14 @@
             <h1>Events Management</h1>
             <div class="search-box">
                 <i class="fa fa-search"></i>
-                <input type="text" id="searchInput" placeholder="Search" oninput="filterEvents()">
+                <input type="text" id="searchInput" placeholder="Search events" oninput="filterEvents()">
             </div>
             <button class="btn-update" onclick="openModal()">+ New Event</button>
         </div>
 
         <div class="main-layout">
+            <!-- ── SIDEBAR ── -->
             <aside class="sidebar-info">
-                <!-- Compact stats row -->
                 <div class="stats-row-card">
                     <div class="stats-mini">
                         <div class="stats-num"><%= events.length %></div>
@@ -55,90 +181,129 @@
                     </div>
                 </div>
 
-                <!-- Quick registrations view -->
                 <div class="apps-card">
                     <h4><i class="fas fa-users"></i> Registrations</h4>
-                    <% events.forEach(e => { %>
+                    <% sidebarEvents.forEach(e => {
+                        const days = daysUntil(e.event_date);
+                        const chipClass = days === 0 ? 'urgent' : (days > 0 && days <= 7 ? 'soon' : '');
+                        const chipText  = days < 0 ? fmtDate(e.event_date)
+                                        : days === 0 ? 'Today'
+                                        : days === 1 ? 'Tomorrow'
+                                        : days <= 7  ? `In ${days}d`
+                                        : fmtDate(e.event_date);
+                    %>
                     <a href="/events/registrations/<%= e.id %>" class="app-row">
                         <span class="app-count <%= (regCounts[e.id] || 0) === 0 ? 'zero' : '' %>">
                             <%= regCounts[e.id] || 0 %>
                         </span>
                         <span class="app-label"><%= e.title %></span>
+                        <span class="app-date-chip <%= chipClass %>"><%= chipText %></span>
                         <i class="fas fa-chevron-right app-arrow"></i>
                     </a>
                     <% }) %>
                 </div>
             </aside>
 
+            <!-- ── EVENT GRID ── -->
             <section class="job-grid" id="eventGrid">
-                <% events.forEach(event => { %>
-                <div class="job-card" data-title="<%= event.title.toLowerCase() %>">
 
-                    <a href="/events/registrations/<%= event.id %>" class="btn-registrations">
-                        <i class="fas fa-users"></i>
-                        Registrations
-                        <span class="reg-badge <%= (regCounts[event.id] || 0) === 0 ? 'reg-badge--zero' : '' %>">
-                            <%= regCounts[event.id] || 0 %>
-                        </span>
-                    </a>
+                <% if (upcoming.length > 0) { %>
+                <div class="grid-section-label"><i class="fas fa-calendar-check" style="color:#27247B"></i> Upcoming Events</div>
+                <% } %>
 
-                    <form action="/events/update/<%= event.id %>" method="POST" enctype="multipart/form-data">
-                        <label>Title</label>
-                        <input type="text" name="title" value="<%= event.title %>">
+                <% sorted.forEach((event, idx) => {
+                    const days  = daysUntil(event.event_date);
+                    const uCls  = urgencyClass(days);
+                    const uLbl  = urgencyLabel(days);
+                    const isFirstPast = idx === upcoming.length && past.length > 0;
+                    const isNextUp    = idx === 0 && days >= 0;
+                %>
 
-                        <label>Category</label>
-                        <select name="category">
-                            <option value="networking" <%= event.category === 'networking' ? 'selected' : '' %>>Networking</option>
-                            <option value="workshop"   <%= event.category === 'workshop'   ? 'selected' : '' %>>Workshop</option>
-                        </select>
+                    <% if (isFirstPast) { %>
+                    <div class="grid-section-label"><i class="fas fa-clock" style="color:#aaa"></i> Past Events</div>
+                    <% } %>
 
-                        <label>Date</label>
-                        <input type="date" name="event_date" value="<%= toDateInput(event.event_date) %>">
+                    <div class="job-card card--<%= uCls %>"
+                         data-title="<%= event.title.toLowerCase() %>"
+                         data-status="<%= uCls === 'past' ? 'past' : 'upcoming' %>">
 
-                        <label>Location</label>
-                        <input type="text" name="location" value="<%= event.location || '' %>">
+                        <!-- Urgency strip -->
+                        <div class="event-urgency urgency--<%= uCls %>">
+                            <span>
+                                <%= uLbl %>
+                                <% if (isNextUp) { %>
+                                &nbsp;<span class="next-up-badge"><i class="fas fa-crown"></i> Next Up</span>
+                                <% } %>
+                            </span>
+                            <span class="urgency-date"><%= fmtDate(event.event_date) %></span>
+                        </div>
 
-                        <label>Description</label>
-                        <textarea name="description" rows="4"><%= event.description %></textarea>
+                        <a href="/events/registrations/<%= event.id %>" class="btn-registrations">
+                            <i class="fas fa-users"></i>
+                            Registrations
+                            <span class="reg-badge <%= (regCounts[event.id] || 0) === 0 ? 'reg-badge--zero' : '' %>">
+                                <%= regCounts[event.id] || 0 %>
+                            </span>
+                        </a>
 
-                        <label>Register link</label>
-                        <input type="url" name="register_link" value="<%= event.register_link || '' %>">
+                        <form action="/events/update/<%= event.id %>" method="POST" enctype="multipart/form-data">
+                            <label>Title</label>
+                            <input type="text" name="title" value="<%= event.title %>">
 
-                        <label class="checkbox-row">
-                            <input type="checkbox" name="is_featured" <%= event.is_featured ? 'checked' : '' %>>
-                            Featured event
-                        </label>
+                            <label>Category</label>
+                            <select name="category">
+                                <option value="networking" <%= event.category === 'networking' ? 'selected' : '' %>>Networking</option>
+                                <option value="workshop"   <%= event.category === 'workshop'   ? 'selected' : '' %>>Workshop</option>
+                            </select>
 
-                        <label>Image</label>
-                        <div class="img-row">
-                            <div class="img-thumb">
-                                <img id="preview-<%= event.id %>"
-                                     src="<%= event.image_path || '/images/placeholder.jpg' %>"
-                                     alt="Event image">
-                            </div>
-                            <label class="img-placeholder">
-                                <i class="fa fa-upload"></i>
-                                <span>Replace</span>
-                                <input type="file" name="image" accept="image/*" hidden
-                                       onchange="previewImage(this, 'preview-<%= event.id %>')">
+                            <label>Date</label>
+                            <input type="date" name="event_date" value="<%= toDateInput(event.event_date) %>">
+
+                            <label>Location</label>
+                            <input type="text" name="location" value="<%= event.location || '' %>">
+
+                            <label>Description</label>
+                            <textarea name="description" rows="4"><%= event.description %></textarea>
+
+                            <label>Register link</label>
+                            <input type="url" name="register_link" value="<%= event.register_link || '' %>">
+
+                            <label class="checkbox-row">
+                                <input type="checkbox" name="is_featured" <%= event.is_featured ? 'checked' : '' %>>
+                                Featured event
                             </label>
-                        </div>
 
-                        <div class="card-actions">
-                            <button type="submit" class="btn-update">UPDATE</button>
-                        </div>
-                    </form>
+                            <label>Image</label>
+                            <div class="img-row">
+                                <div class="img-thumb">
+                                    <img id="preview-<%= event.id %>"
+                                         src="<%= event.image_path || '/images/placeholder.jpg' %>"
+                                         alt="Event image">
+                                </div>
+                                <label class="img-placeholder">
+                                    <i class="fa fa-upload"></i>
+                                    <span>Replace</span>
+                                    <input type="file" name="image" accept="image/*" hidden
+                                           onchange="previewImage(this, 'preview-<%= event.id %>')">
+                                </label>
+                            </div>
 
-                    <form action="/events/delete/<%= event.id %>" method="POST"
-                          onsubmit="return confirm('Remove this event?')">
-                        <button type="submit" class="btn-remove">REMOVE</button>
-                    </form>
-                </div>
+                            <div class="card-actions">
+                                <button type="submit" class="btn-update">UPDATE</button>
+                            </div>
+                        </form>
+
+                        <form action="/events/delete/<%= event.id %>" method="POST"
+                              onsubmit="return confirm('Remove this event?')">
+                            <button type="submit" class="btn-remove">REMOVE</button>
+                        </form>
+                    </div>
+
                 <% }) %>
             </section>
         </div>
 
-        <!-- Create New Event Modal -->
+        <!-- ── CREATE MODAL ── -->
         <div id="createModal" class="modal-overlay" style="display:none;">
             <div class="modal">
                 <h3>Create New Event</h3>
@@ -205,6 +370,10 @@
             const q = document.getElementById('searchInput').value.toLowerCase();
             document.querySelectorAll('.job-card').forEach(card => {
                 card.style.display = card.dataset.title.includes(q) ? '' : 'none';
+            });
+            // Also hide/show section labels based on visible cards
+            document.querySelectorAll('.grid-section-label').forEach(label => {
+                label.style.display = q ? 'none' : '';
             });
         }
     </script>
