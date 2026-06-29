@@ -249,6 +249,16 @@ app.post('/events/delete/:id', isAuthenticated, async (req, res) => {
     }
 });
 
+app.post('/careers/applications/delete/:id', isAuthenticated, async (req, res) => {
+    try {
+        await db.query('DELETE FROM applications WHERE id = ?', [req.params.id]);
+        res.redirect('back');
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Error deleting application');
+    }
+});
+
 app.get('/events/registrations/:id', isAuthenticated, async (req, res) => {
     try {
         const [[event]] = await db.query('SELECT * FROM events WHERE id = ?', [req.params.id]);
