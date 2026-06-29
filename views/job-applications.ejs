@@ -7,6 +7,22 @@
     <link rel="stylesheet" href="/styles/careers.css">
     <link rel="stylesheet" href="/styles/applications.css">
     <style>
+        .btn-delete-app {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: transparent;
+            color: #c0392b;
+            border: 1px solid #e0b0aa;
+            border-radius: 5px;
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.15s, color 0.15s;
+        }
+        .btn-delete-app:hover { background: #e74c3c; color: #fff; border-color: #e74c3c; }
+
         .application-card { scroll-margin-top: 90px; }
         .application-card.highlight {
             animation: card-flash 1.6s ease forwards;
@@ -84,7 +100,7 @@
                 </div>
                 <% } %>
 
-                <div class="card-footer">
+                <div class="card-footer" style="display:flex; justify-content:space-between; align-items:center;">
                     <% if (app.resume_path) { %>
                     <a href="<%= app.resume_path %>" target="_blank" class="btn-resume">
                         <i class="fas fa-file-alt"></i> View Resume
@@ -92,6 +108,13 @@
                     <% } else { %>
                     <span class="no-resume">No resume attached</span>
                     <% } %>
+
+                    <form action="/careers/applications/delete/<%= app.id %>" method="POST"
+                          onsubmit="return confirm('Delete this application from <%= app.full_name %>? This cannot be undone.')">
+                        <button type="submit" class="btn-delete-app">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    </form>
                 </div>
             </div>
             <% }) %>
