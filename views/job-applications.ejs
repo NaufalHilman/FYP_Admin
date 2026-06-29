@@ -6,6 +6,16 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/styles/careers.css">
     <link rel="stylesheet" href="/styles/applications.css">
+    <style>
+        .application-card { scroll-margin-top: 90px; }
+        .application-card.highlight {
+            animation: card-flash 1.6s ease forwards;
+        }
+        @keyframes card-flash {
+            0%,20% { box-shadow: 0 0 0 3px #FFCB05; background: #fffbea; }
+            100%    { box-shadow: none; background: #fff; }
+        }
+    </style>
 </head>
 <body>
     <%- include('../partials/sidebar') %>
@@ -50,7 +60,7 @@
 
         <div class="applications-list">
             <% applications.forEach(app => { %>
-            <div class="application-card">
+            <div class="application-card" id="app-<%= app.id %>">
                 <div class="applicant-header">
                     <div class="applicant-avatar">
                         <%= app.full_name.charAt(0).toUpperCase() %>
@@ -88,5 +98,15 @@
         </div>
         <% } %>
     </main>
+<script>
+    const hash = window.location.hash;
+    if (hash && hash.startsWith('#app-')) {
+        const target = document.querySelector(hash);
+        if (target) {
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            target.classList.add('highlight');
+        }
+    }
+</script>
 </body>
 </html>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard</title>
+    <title>Admin Dashboard — ARDE</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
@@ -11,52 +11,144 @@
     <%- include('../partials/sidebar') %>
     <%- include('../partials/header') %>
 
-    <div class="main-content">
-        <div class="content-header">
-            <h1>Dashboard Overview</h1>
-            <p>Welcome back! Here is what is happening on your guest site today.</p>
+    <div class="dash-main">
+
+        <!-- ── PAGE HEADER ── -->
+        <div class="dash-hdr">
+            <div>
+                <h1 class="dash-hdr__title">Dashboard</h1>
+                <p class="dash-hdr__sub">
+                    <% const now = new Date();
+                       const dateStr = now.toLocaleDateString('en-SG', { weekday:'long', year:'numeric', month:'long', day:'numeric' }); %>
+                    <%= dateStr %>
+                </p>
+            </div>
+            <a href="/members?tab=applications" class="dash-cta">
+                <i class="fas fa-user-check"></i>
+                Review Member Applications
+                <% if (pendingApps > 0) { %><span class="dash-cta__badge"><%= pendingApps %></span><% } %>
+            </a>
         </div>
 
-        <div class="card-grid">
-            <div class="card card-blue">
-                <div class="card-inner">
-                    <div>
-                        <h3>Active Events</h3>
-                        <p class="card-number">0</p>
-                    </div>
-                    <i class="fas fa-calendar-alt card-icon"></i>
+        <!-- ── STAT CARDS ── -->
+        <div class="stat-grid">
+
+            <a href="/members" class="stat-card stat-card--navy">
+                <div class="stat-card__icon"><i class="fas fa-users"></i></div>
+                <div class="stat-card__body">
+                    <p class="stat-card__num"><%= memberCount %></p>
+                    <p class="stat-card__lbl">Total Members</p>
                 </div>
+            </a>
+
+            <a href="/members?tab=applications" class="stat-card stat-card--yellow">
+                <div class="stat-card__icon"><i class="fas fa-hourglass-half"></i></div>
+                <div class="stat-card__body">
+                    <p class="stat-card__num"><%= pendingApps %></p>
+                    <p class="stat-card__lbl">Pending Applications</p>
+                </div>
+                <% if (pendingApps > 0) { %><span class="stat-card__dot"></span><% } %>
+            </a>
+
+            <a href="/events" class="stat-card stat-card--blue">
+                <div class="stat-card__icon"><i class="fas fa-calendar-check"></i></div>
+                <div class="stat-card__body">
+                    <p class="stat-card__num"><%= eventCount %></p>
+                    <p class="stat-card__lbl">Upcoming Events</p>
+                </div>
+            </a>
+
+            <a href="/awards" class="stat-card stat-card--gold">
+                <div class="stat-card__icon"><i class="fas fa-trophy"></i></div>
+                <div class="stat-card__body">
+                    <p class="stat-card__num"><%= openAwards %></p>
+                    <p class="stat-card__lbl">Open Awards</p>
+                </div>
+            </a>
+
+            <a href="/careers" class="stat-card stat-card--teal">
+                <div class="stat-card__icon"><i class="fas fa-briefcase"></i></div>
+                <div class="stat-card__body">
+                    <p class="stat-card__num"><%= jobCount %></p>
+                    <p class="stat-card__lbl">Career Listings</p>
+                </div>
+            </a>
+
+            <a href="/careers" class="stat-card stat-card--purple">
+                <div class="stat-card__icon"><i class="fas fa-file-alt"></i></div>
+                <div class="stat-card__body">
+                    <p class="stat-card__num"><%= appCount %></p>
+                    <p class="stat-card__lbl">Job Applications</p>
+                </div>
+            </a>
+
+        </div>
+
+        <!-- ── LOWER PANELS ── -->
+        <div class="dash-panels">
+
+            <!-- Pending membership applications -->
+            <div class="panel">
+                <div class="panel__hdr">
+                    <h2 class="panel__title"><i class="fas fa-clock"></i> Pending Applications</h2>
+                    <a href="/members?tab=applications" class="panel__link">View all</a>
+                </div>
+                <% if (recentApps.length === 0) { %>
+                    <div class="panel__empty">
+                        <i class="fas fa-inbox"></i>
+                        <p>No pending applications</p>
+                    </div>
+                <% } else { %>
+                    <ul class="activity-list">
+                        <% recentApps.forEach(a => { %>
+                        <li class="activity-item">
+                            <div class="activity-avatar"><%= a.full_name.charAt(0).toUpperCase() %></div>
+                            <div class="activity-info">
+                                <span class="activity-name"><%= a.full_name %></span>
+                                <span class="activity-sub"><%= a.hotel_name || a.personal_email %></span>
+                            </div>
+                            <span class="activity-time">
+                                <%= new Date(a.submitted_at).toLocaleDateString('en-SG', {day:'numeric',month:'short'}) %>
+                            </span>
+                        </li>
+                        <% }) %>
+                    </ul>
+                <% } %>
             </div>
 
-            <div class="card card-green">
-                <div class="card-inner">
-                    <div>
-                        <h3>Career Listings</h3>
-                        <p class="card-number"><%= jobCount %></p>
-                    </div>
-                    <i class="fas fa-briefcase card-icon"></i>
+            <!-- Recent job applications -->
+            <div class="panel">
+                <div class="panel__hdr">
+                    <h2 class="panel__title"><i class="fas fa-file-signature"></i> Recent Job Applications</h2>
+                    <a href="/careers" class="panel__link">View all</a>
                 </div>
+                <% if (recentJobApps.length === 0) { %>
+                    <div class="panel__empty">
+                        <i class="fas fa-inbox"></i>
+                        <p>No job applications yet</p>
+                    </div>
+                <% } else { %>
+                    <ul class="activity-list">
+                        <% recentJobApps.forEach(a => { %>
+                        <li class="activity-item">
+                            <a href="/careers/applications/<%= a.career_id %>#app-<%= a.id %>" class="activity-row-link">
+                                <div class="activity-avatar activity-avatar--teal"><%= a.full_name.charAt(0).toUpperCase() %></div>
+                                <div class="activity-info">
+                                    <span class="activity-name"><%= a.full_name %></span>
+                                    <span class="activity-sub"><%= a.job_title %></span>
+                                </div>
+                                <span class="activity-time">
+                                    <%= new Date(a.submitted_at).toLocaleDateString('en-SG', {day:'numeric',month:'short'}) %>
+                                </span>
+                                <i class="fas fa-chevron-right activity-arrow"></i>
+                            </a>
+                        </li>
+                        <% }) %>
+                    </ul>
+                <% } %>
             </div>
 
-            <div class="card card-yellow">
-                <div class="card-inner">
-                    <div>
-                        <h3>Total Applications</h3>
-                        <p class="card-number"><%= appCount %></p>
-                    </div>
-                    <i class="fas fa-file-alt card-icon"></i>
-                </div>
-            </div>
 
-            <div class="card card-red">
-                <div class="card-inner">
-                    <div>
-                        <h3>Recent Announcements</h3>
-                        <p class="card-number">0</p>
-                    </div>
-                    <i class="fas fa-bullhorn card-icon"></i>
-                </div>
-            </div>
         </div>
     </div>
 
@@ -64,68 +156,297 @@
 </html>
 
 <style>
+/* ── RESET / BASE ── */
 body {
     margin: 0;
-    background-color: #f8f9fc;
+    background: #f0f1f8;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #2d2d3a;
 }
 
-.main-content {
+/* ── MAIN CONTENT ── */
+.dash-main {
     margin-left: 260px;
-    padding: 100px 30px 30px 30px;
-    min-height: calc(100vh - 100px);
+    padding: 90px 32px 48px;
+    min-height: 100vh;
 }
 
-.content-header h1 { margin: 0 0 10px 0; color: #3a3b45; }
-.content-header p  { margin: 0 0 30px 0; color: #858796; }
-
-.card-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 20px;
-}
-
-.card {
-    background: #fff;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-    border-left: 4px solid transparent;
-}
-
-.card-blue   { border-left-color: #4e73df; }
-.card-green  { border-left-color: #1cc88a; }
-.card-yellow { border-left-color: #d79c07; }
-.card-red    { border-left-color: #e74a3b; }
-
-.card-inner {
+/* ── PAGE HEADER ── */
+.dash-hdr {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    margin-bottom: 28px;
 }
 
-.card h3 {
-    margin: 0 0 8px 0;
-    font-size: 11px;
+.dash-hdr__title {
+    margin: 0 0 4px;
+    font-size: 26px;
     font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    color: #27247B;
 }
 
-.card-blue   h3 { color: #4e73df; }
-.card-green  h3 { color: #1cc88a; }
-.card-yellow h3 { color: #d79c07; }
-.card-red    h3 { color: #e74a3b; }
-
-.card-number {
+.dash-hdr__sub {
     margin: 0;
-    font-size: 28px;
-    font-weight: 700;
-    color: #5a5c69;
+    font-size: 13px;
+    color: #888;
 }
 
-.card-icon {
-    font-size: 36px;
-    opacity: 0.15;
+.dash-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #27247B;
+    color: #fff;
+    text-decoration: none;
+    padding: 11px 22px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    transition: background 0.2s;
+    position: relative;
+}
+
+.dash-cta:hover { background: #1e1b68; }
+
+.dash-cta__badge {
+    background: #FFCB05;
+    color: #27247B;
+    font-size: 11px;
+    font-weight: 800;
+    border-radius: 20px;
+    padding: 1px 7px;
+    line-height: 1.4;
+}
+
+/* ── STAT GRID ── */
+.stat-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+    margin-bottom: 28px;
+}
+
+.stat-card {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    background: #fff;
+    border-radius: 12px;
+    padding: 22px 24px;
+    text-decoration: none;
+    box-shadow: 0 2px 10px rgba(39,36,123,0.07);
+    border-left: 5px solid transparent;
+    transition: transform 0.15s, box-shadow 0.15s;
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(39,36,123,0.12);
+}
+
+.stat-card--navy   { border-left-color: #27247B; }
+.stat-card--yellow { border-left-color: #FFCB05; }
+.stat-card--blue   { border-left-color: #4e73df; }
+.stat-card--gold   { border-left-color: #d79c07; }
+.stat-card--teal   { border-left-color: #1cc88a; }
+.stat-card--purple { border-left-color: #8e44ad; }
+
+.stat-card__icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.stat-card--navy   .stat-card__icon { background: rgba(39,36,123,0.1);  color: #27247B; }
+.stat-card--yellow .stat-card__icon { background: rgba(255,203,5,0.15); color: #b38900; }
+.stat-card--blue   .stat-card__icon { background: rgba(78,115,223,0.1);  color: #4e73df; }
+.stat-card--gold   .stat-card__icon { background: rgba(215,156,7,0.12);  color: #d79c07; }
+.stat-card--teal   .stat-card__icon { background: rgba(28,200,138,0.1);  color: #1cc88a; }
+.stat-card--purple .stat-card__icon { background: rgba(142,68,173,0.1);  color: #8e44ad; }
+
+.stat-card__num {
+    margin: 0 0 3px;
+    font-size: 30px;
+    font-weight: 800;
+    color: #27247B;
+    line-height: 1;
+}
+
+.stat-card__lbl {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: #888;
+}
+
+/* Yellow card pulse dot */
+.stat-card__dot {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #FFCB05;
+    animation: pulse 1.8s infinite;
+}
+
+@keyframes pulse {
+    0%,100% { opacity: 1; transform: scale(1); }
+    50%      { opacity: 0.5; transform: scale(1.4); }
+}
+
+/* ── LOWER PANELS ── */
+.dash-panels {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+    align-items: start;
+}
+
+.panel {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(39,36,123,0.07);
+    overflow: hidden;
+}
+
+.panel__hdr {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 22px;
+    border-bottom: 1px solid #eeeef6;
+}
+
+.panel__title {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 700;
+    color: #27247B;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.panel__title i { color: #96CDF6; font-size: 13px; }
+
+.panel__link {
+    font-size: 12px;
+    font-weight: 600;
+    color: #27247B;
+    text-decoration: none;
+    opacity: 0.65;
+    transition: opacity 0.2s;
+}
+
+.panel__link:hover { opacity: 1; }
+
+.panel__empty {
+    padding: 36px 22px;
+    text-align: center;
+    color: #bbb;
+}
+
+.panel__empty i { font-size: 32px; margin-bottom: 10px; display: block; }
+.panel__empty p { margin: 0; font-size: 13px; }
+
+/* ── ACTIVITY LIST ── */
+.activity-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.activity-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 13px 22px;
+    border-bottom: 1px solid #f4f4fb;
+    transition: background 0.15s;
+}
+
+.activity-item:last-child { border-bottom: none; }
+.activity-item:hover { background: #f8f8fd; }
+
+.activity-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #27247B;
+    color: #FFCB05;
+    font-size: 14px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.activity-avatar--teal { background: #1cc88a; color: #fff; }
+
+.activity-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.activity-name {
+    display: block;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #2d2d3a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.activity-sub {
+    display: block;
+    font-size: 12px;
+    color: #999;
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.activity-time {
+    font-size: 11.5px;
+    color: #bbb;
+    flex-shrink: 0;
+}
+
+/* Clickable row (job applications) */
+.activity-row-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    text-decoration: none;
+    color: inherit;
+}
+
+.activity-arrow {
+    font-size: 11px;
+    color: #ccc;
+    flex-shrink: 0;
+    margin-left: 4px;
+    transition: color 0.15s, transform 0.15s;
+}
+
+.activity-item:hover .activity-arrow {
+    color: #27247B;
+    transform: translateX(2px);
 }
 </style>

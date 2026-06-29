@@ -73,9 +73,25 @@ app.get('/logout', (req, res) => {
 // Dashboard
 app.get('/dashboard', isAuthenticated, async (req, res) => {
     try {
-        const [[{ jobCount }]] = await db.query('SELECT COUNT(*) as jobCount FROM careers');
-        const [[{ appCount }]] = await db.query('SELECT COUNT(*) as appCount FROM applications');
-        res.render('dashboard', { jobCount, appCount });
+        const [[{ memberCount }]]  = await db.query('SELECT COUNT(*) as memberCount FROM members');
+        const [[{ pendingApps }]]  = await db.query("SELECT COUNT(*) as pendingApps FROM membership_applications WHERE status = 'pending'");
+        const [[{ eventCount }]]   = await db.query('SELECT COUNT(*) as eventCount FROM events WHERE event_date >= CURDATE()');
+        const [[{ jobCount }]]     = await db.query('SELECT COUNT(*) as jobCount FROM careers');
+        const [[{ appCount }]]     = await db.query('SELECT COUNT(*) as appCount FROM applications');
+        const [[{ openAwards }]]   = await db.query('SELECT COUNT(*) as openAwards FROM awards WHERE deadline >= CURDATE()');
+
+        const [recentApps] = await db.query(
+            "SELECT full_name, personal_email, hotel_name, submitted_at FROM membership_applications WHERE status = 'pending' ORDER BY submitted_at DESC LIMIT 5"
+        );
+        const [recentJobApps] = await db.query(
+            `SELECT a.id, a.full_name, a.email, a.submitted_at,
+                    a.career_id AS career_id, c.job_title
+             FROM applications a
+             JOIN careers c ON a.career_id = c.id
+             ORDER BY a.submitted_at DESC LIMIT 5`
+        );
+
+        res.render('dashboard', { memberCount, pendingApps, eventCount, jobCount, appCount, openAwards, recentApps, recentJobApps });
     } catch (err) {
         console.error(err);
         res.status(500).send('Server Error');
