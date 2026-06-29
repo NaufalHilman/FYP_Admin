@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Award Registrations</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/styles/careers.css">
+    <link rel="stylesheet" href="/styles/members-admin.css">
+    <style>
+        .aw-back { display:inline-flex; align-items:center; gap:6px; color:#27247B; font-size:13px; font-weight:600; text-decoration:none; margin-bottom:20px; }
+        .aw-back:hover { text-decoration:underline; }
+        .aw-hero { background:linear-gradient(135deg,#27247B,#1a1860); border-radius:10px; padding:22px 28px; margin-bottom:28px; color:#fff; display:flex; align-items:center; gap:18px; }
+        .aw-hero__icon { font-size:2rem; opacity:.8; }
+        .aw-hero__title { font-size:1.25rem; font-weight:700; margin:0 0 4px; }
+        .aw-hero__meta { font-size:.85rem; color:rgba(255,255,255,.7); display:flex; gap:18px; flex-wrap:wrap; }
+        .aw-hero__meta span { display:flex; align-items:center; gap:5px; }
+
+        /* Section tabs */
+        .section-tabs { display:flex; gap:8px; margin-bottom:28px; border-bottom:2px solid #eef0fb; }
+        .section-tab { background:none; border:none; padding:12px 22px; font-size:14px; font-weight:600; color:#858796; cursor:pointer; border-bottom:3px solid transparent; margin-bottom:-2px; transition:all .2s; }
+        .section-tab:hover { color:#27247B; }
+        .section-tab.active { color:#27247B; border-bottom-color:#27247B; }
+        .section-tab .badge { display:inline-flex; align-items:center; justify-content:center; background:#27247B; color:#fff; font-size:.7rem; font-weight:700; min-width:18px; height:18px; border-radius:9px; padding:0 5px; margin-left:6px; }
+        .section-tab .badge--gold { background:#b7791f; }
+        .section-tab .badge--warn { background:#e53e3e; }
+
+        /* Registrations tab table */
+        .reg-table { width:100%; border-collapse:collapse; }
+        .reg-table th { text-align:left; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#858796; padding:12px 14px; background:#f8f9fc; border-bottom:2px solid #eef0fb; }
+        .reg-table td { padding:12px 14px; font-size:14px; color:#444; border-bottom:1px solid #f0f1f9; vertical-align:middle; }
+        .reg-table tr:hover td { background:#fafbff; }
+        .reg-table tr.chosen td { opacity:.45; }
+
+        .btn-winner { padding:5px 12px; border:none; border-radius:5px; font-size:12px; font-weight:600; cursor:pointer; background:#FFCB05; color:#1a1860; }
+        .btn-winner:hover:not(:disabled) { background:#e5b800; }
+        .btn-runner { padding:5px 12px; border:1px solid #27247B; border-radius:5px; font-size:12px; font-weight:600; cursor:pointer; background:#fff; color:#27247B; }
+        .btn-runner:hover:not(:disabled) { background:#27247B; color:#fff; }
+        .btn-winner:disabled, .btn-runner:disabled { opacity:.4; cursor:not-allowed; }
+        .chosen-pill { font-size:11px; color:#888; background:#f0f1f9; padding:3px 10px; border-radius:12px; }
+
+        .action-row { display:flex; gap:6px; align-items:center; }
+
+        /* Winners tab */
+        .winners-section { margin-bottom:32px; }
+        .winners-section h3 { font-size:15px; font-weight:700; color:#27247B; padding-bottom:10px; border-bottom:2px solid #eef0fb; margin-bottom:16px; display:flex; align-items:center; gap:8px; }
+        .trophy-icon { color:#FFCB05; }
+        .silver-icon { color:#aaa; }
+
+        .winner-row { display:flex; align-items:center; gap:14px; padding:12px 16px; background:#fff; border:1px solid #eef0fb; border-radius:8px; margin-bottom:8px; }
+        .winner-rank { min-width:60px; padding:3px 8px; border-radius:20px; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:11px; flex-shrink:0; text-transform:uppercase; letter-spacing:.4px; }
+        .winner-rank--gold   { background:#fff3cd; color:#b7791f; }
+        .winner-rank--silver { background:#f0f0f0; color:#666; }
+        .winner-rank--bronze { background:#fdf0e8; color:#a0522d; }
+        .winner-rank--neutral { background:#f5f5f5; color:#999; }
+        .winner-name { flex:1; font-size:14px; font-weight:600; color:#222; }
+        .winner-id { font-size:12px; color:#888; font-family:monospace; }
+        .winner-actions { display:flex; gap:6px; }
+
+        .btn-edit { padding:5px 12px; border:1px solid #d1d5db; border-radius:5px; font-size:12px; background:#fff; color:#444; cursor:pointer; }
+        .btn-edit:hover { border-color:#27247B; color:#27247B; }
+        .btn-remove-sm { padding:5px 10px; border:1px solid #fca5a5; border-radius:5px; font-size:12px; background:#fff; color:#e53e3e; cursor:pointer; }
+        .btn-remove-sm:hover { background:#fde8e8; }
+
+        .empty-state { text-align:center; padding:32px; color:#aaa; font-size:13px; }
+        .empty-state i { font-size:2rem; margin-bottom:8px; display:block; }
+
+        /* Edit modal */
+        .edit-modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); align-items:center; justify-content:center; z-index:1000; }
+        .edit-modal-overlay.open { display:flex; }
+        .edit-modal { background:#fff; border-radius:10px; padding:28px 32px; width:420px; max-width:95vw; }
+        .edit-modal h3 { font-size:16px; font-weight:700; color:#222; margin-bottom:20px; }
+        .edit-modal label { display:block; font-size:12px; font-weight:600; color:#555; margin-bottom:5px; margin-top:14px; }
+        .edit-modal input, .edit-modal select { width:100%; padding:9px 12px; border:1px solid #ddd; border-radius:6px; font-size:14px; font-family:inherit; box-sizing:border-box; }
+        .edit-modal-footer { display:flex; gap:10px; margin-top:22px; justify-content:flex-end; }
+        .btn-save { padding:9px 20px; background:#27247B; color:#fff; border:none; border-radius:6px; font-size:13px; font-weight:600; cursor:pointer; }
+        .btn-save:hover { background:#1a1860; }
+        .btn-cancel-modal { padding:9px 16px; background:#fff; color:#666; border:1px solid #d1d5db; border-radius:6px; font-size:13px; cursor:pointer; }
+    </style>
+</head>
+<body>
+    <%- include('../partials/sidebar') %>
+    <%- include('../partials/header') %>
+
+    <main class="content">
+
+        <a href="/awards" class="aw-back"><i class="fas fa-arrow-left"></i> Back to Awards</a>
+
+        <!-- Award hero card -->
+        <div class="aw-hero">
+            <div class="aw-hero__icon"><i class="fas fa-trophy"></i></div>
+            <div>
+                <p class="aw-hero__title"><%= award.title %></p>
+                <div class="aw-hero__meta">
+                    <span><i class="fas fa-calendar-alt"></i> Deadline: <%= new Date(award.deadline).toLocaleDateString('en-SG', {day:'numeric',month:'short',year:'numeric'}) %></span>
+                    <span><i class="fas fa-star"></i> Max winners: <%= award.max_winners %></span>
+                    <span><i class="fas fa-users"></i> <%= registrations.length %> registrant<%= registrations.length !== 1 ? 's' : '' %></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Flash messages -->
+        <% if (error) { %>
+        <div class="alert-error" style="margin-bottom:16px;padding:.75rem 1rem;border-radius:6px;background:#fde8e8;border-left:4px solid #e53e3e;color:#c53030;display:flex;align-items:center;gap:.5rem;">
+            <i class="fas fa-exclamation-circle"></i> <%= error %>
+        </div>
+        <% } %>
+        <% if (notice) { %>
+        <div class="alert-notice" style="margin-bottom:16px;padding:.75rem 1rem;border-radius:6px;background:#e8f5e9;border-left:4px solid #38a169;color:#276749;display:flex;align-items:center;gap:.5rem;">
+            <i class="fas fa-check-circle"></i> <%= notice %>
+        </div>
+        <% } %>
+
+        <!-- Section tabs -->
+        <div class="section-tabs">
+            <button class="section-tab <%= tab === 'registrations' ? 'active' : '' %>" data-tab="registrations">
+                <i class="fas fa-list"></i> Registrations
+                <span class="badge badge--warn"><%= registrations.length %></span>
+            </button>
+            <button class="section-tab <%= tab === 'winners' ? 'active' : '' %>" data-tab="winners">
+                <i class="fas fa-trophy"></i> Winners &amp; Runner-ups
+                <% const totalChosen = winners.length + runnerUps.length; %>
+                <% if (totalChosen > 0) { %>
+                <span class="badge badge--gold"><%= totalChosen %></span>
+                <% } %>
+            </button>
+        </div>
+
+        <!-- ===== TAB: REGISTRATIONS ===== -->
+        <div id="tab-registrations" class="tab-content" style="<%= tab === 'registrations' ? '' : 'display:none' %>">
+            <% if (registrations.length === 0) { %>
+            <div class="empty-state">
+                <i class="fas fa-inbox"></i>
+                No one has registered for this award yet.
+            </div>
+            <% } else { %>
+            <table class="reg-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Name</th>
+                        <th>Member ID</th>
+                        <th>Registered</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% registrations.forEach((reg, i) => {
+                        const isChosen = chosenIds.includes(reg.member_id);
+                        const winnersFull = winners.length >= award.max_winners;
+                    %>
+                    <tr class="<%= isChosen ? 'chosen' : '' %>">
+                        <td><%= i + 1 %></td>
+                        <td><strong><%= reg.full_name %></strong></td>
+                        <td><code class="member-id-chip"><%= reg.member_id %></code></td>
+                        <td><%= reg.registered_at ? new Date(reg.registered_at).toLocaleDateString('en-SG', {day:'numeric',month:'short',year:'numeric'}) : '—' %></td>
+                        <td>
+                            <% if (isChosen) { %>
+                                <span class="chosen-pill"><i class="fas fa-check"></i> Chosen</span>
+                            <% } else { %>
+                            <div class="action-row">
+                                <form action="/awards/winners/choose/<%= award.id %>" method="POST" style="display:inline">
+                                    <input type="hidden" name="member_id" value="<%= reg.member_id %>">
+                                    <input type="hidden" name="role" value="winner">
+                                    <button class="btn-winner" <%= winnersFull ? 'disabled title="Max winners reached"' : '' %>>
+                                        <i class="fas fa-trophy"></i> Winner
+                                    </button>
+                                </form>
+                                <form action="/awards/winners/choose/<%= award.id %>" method="POST" style="display:inline">
+                                    <input type="hidden" name="member_id" value="<%= reg.member_id %>">
+                                    <input type="hidden" name="role" value="runner_up">
+                                    <button class="btn-runner">
+                                        <i class="fas fa-medal"></i> Runner-up
+                                    </button>
+                                </form>
+                            </div>
+                            <% } %>
+                        </td>
+                    </tr>
+                    <% }) %>
+                </tbody>
+            </table>
+            <% } %>
+        </div>
+
+        <!-- ===== TAB: WINNERS & RUNNER-UPS ===== -->
+        <div id="tab-winners" class="tab-content" style="<%= tab === 'winners' ? '' : 'display:none' %>">
+
+            <!-- Winners -->
+            <div class="winners-section">
+                <h3><i class="fas fa-trophy trophy-icon"></i> Winners (<%= winners.length %> / <%= award.max_winners %>)</h3>
+                <% if (winners.length === 0) { %>
+                <div class="empty-state">
+                    <i class="fas fa-trophy" style="color:#eee"></i>
+                    No winners chosen yet. Go to the Registrations tab to select winners.
+                </div>
+                <% } else { %>
+                <% winners.forEach((w, i) => {
+                    const pos = i + 1;
+                    const rankClass = pos === 1 ? 'gold' : pos === 2 ? 'silver' : pos === 3 ? 'bronze' : 'neutral';
+                    const ordSuffix = [,'st','nd','rd'][pos] || 'th';
+                %>
+                <div class="winner-row">
+                    <div class="winner-rank winner-rank--<%= rankClass %>"><%= pos %><%= ordSuffix %> Place</div>
+                    <div>
+                        <div class="winner-name"><%= w.full_name %></div>
+                        <div class="winner-id"><%= w.member_id %><% if (w.hotel) { %> &bull; <%= w.hotel %><% } %></div>
+                    </div>
+                    <div class="winner-actions">
+                        <button class="btn-edit"
+                            data-id="<%= w.id %>"
+                            data-name="<%= (w.full_name||'').replace(/"/g,'&quot;') %>"
+                            data-hotel="<%= (w.hotel||'').replace(/"/g,'&quot;') %>"
+                            data-role="winner"
+                            data-award="<%= award.id %>"
+                            onclick="openEditFromBtn(this)">
+                            <i class="fas fa-pen"></i> Edit
+                        </button>
+                        <form action="/awards/winners/remove/<%= w.id %>" method="POST" style="display:inline" onsubmit="return confirm('Remove as winner?')">
+                            <input type="hidden" name="award_id" value="<%= award.id %>">
+                            <button class="btn-remove-sm"><i class="fas fa-times"></i> Remove</button>
+                        </form>
+                    </div>
+                </div>
+                <% }) %>
+                <% } %>
+            </div>
+
+            <!-- Runner-ups -->
+            <div class="winners-section">
+                <h3><i class="fas fa-medal silver-icon"></i> Runner-ups (<%= runnerUps.length %>)</h3>
+                <% if (runnerUps.length === 0) { %>
+                <div class="empty-state">
+                    <i class="fas fa-medal" style="color:#eee"></i>
+                    No runner-ups added yet.
+                </div>
+                <% } else { %>
+                <% runnerUps.forEach((w, i) => { %>
+                <div class="winner-row">
+                    <div class="winner-rank winner-rank--silver">Runner-up</div>
+                    <div>
+                        <div class="winner-name"><%= w.full_name %></div>
+                        <div class="winner-id"><%= w.member_id %><% if (w.hotel) { %> &bull; <%= w.hotel %><% } %></div>
+                    </div>
+                    <div class="winner-actions">
+                        <button class="btn-edit"
+                            data-id="<%= w.id %>"
+                            data-name="<%= (w.full_name||'').replace(/"/g,'&quot;') %>"
+                            data-hotel="<%= (w.hotel||'').replace(/"/g,'&quot;') %>"
+                            data-role="runner_up"
+                            data-award="<%= award.id %>"
+                            onclick="openEditFromBtn(this)">
+                            <i class="fas fa-pen"></i> Edit
+                        </button>
+                        <form action="/awards/winners/remove/<%= w.id %>" method="POST" style="display:inline" onsubmit="return confirm('Remove as runner-up?')">
+                            <input type="hidden" name="award_id" value="<%= award.id %>">
+                            <button class="btn-remove-sm"><i class="fas fa-times"></i> Remove</button>
+                        </form>
+                    </div>
+                </div>
+                <% }) %>
+                <% } %>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Edit Modal -->
+    <div class="edit-modal-overlay" id="editModal">
+        <div class="edit-modal">
+            <h3><i class="fas fa-pen" style="color:#27247B;margin-right:8px"></i> Edit Entry</h3>
+            <form id="editForm" method="POST">
+                <input type="hidden" name="award_id" id="edit-award-id">
+                <label for="edit-name">Full Name</label>
+                <input type="text" id="edit-name" name="full_name" required>
+                <label for="edit-hotel">Hotel / Affiliation</label>
+                <input type="text" id="edit-hotel" name="hotel" placeholder="e.g. Marina Bay Sands">
+                <label for="edit-role">Role</label>
+                <select id="edit-role" name="role">
+                    <option value="winner">Winner</option>
+                    <option value="runner_up">Runner-up</option>
+                </select>
+                <div class="edit-modal-footer">
+                    <button type="button" class="btn-cancel-modal" onclick="closeEditModal()">Cancel</button>
+                    <button type="submit" class="btn-save"><i class="fas fa-save"></i> Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // ===== TAB SWITCHER =====
+        const tabs    = document.querySelectorAll('.section-tab');
+        const panels  = document.querySelectorAll('.tab-content');
+
+        tabs.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const target = btn.dataset.tab;
+                tabs.forEach(t => t.classList.remove('active'));
+                panels.forEach(p => p.style.display = 'none');
+                btn.classList.add('active');
+                document.getElementById('tab-' + target).style.display = '';
+                history.replaceState(null, '', window.location.pathname + '?tab=' + target);
+            });
+        });
+
+        // ===== EDIT MODAL =====
+        function openEditFromBtn(btn) {
+            const d = btn.dataset;
+            document.getElementById('editForm').action = '/awards/winners/edit/' + d.id;
+            document.getElementById('edit-award-id').value = d.award;
+            document.getElementById('edit-name').value  = d.name;
+            document.getElementById('edit-hotel').value = d.hotel || '';
+            document.getElementById('edit-role').value  = d.role;
+            document.getElementById('editModal').classList.add('open');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').classList.remove('open');
+            document.body.style.overflow = '';
+        }
+
+        document.getElementById('editModal').addEventListener('click', function(e) {
+            if (e.target === this) closeEditModal();
+        });
+
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') closeEditModal(); });
+    </script>
+</body>
+</html>

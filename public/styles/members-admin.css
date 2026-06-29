@@ -349,6 +349,270 @@
     gap: 10px;
 }
 
+/* =====================================================
+   ALERT BANNERS
+===================================================== */
+.alert-error,
+.alert-notice {
+    margin-bottom: 1rem;
+    padding: .75rem 1rem;
+    border-radius: 6px;
+    font-size: .9rem;
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+}
+
+.alert-error {
+    background: #fde8e8;
+    border-left: 4px solid #e53e3e;
+    color: #c53030;
+}
+
+.alert-notice {
+    background: #e8f5e9;
+    border-left: 4px solid #38a169;
+    color: #276749;
+}
+
+/* =====================================================
+   SEARCH / FILTER BAR
+===================================================== */
+.filter-bar {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    flex-wrap: wrap;
+}
+
+.filter-select {
+    padding: .45rem .75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: .9rem;
+    background: #fff;
+    cursor: pointer;
+    height: 38px;
+}
+
+.filter-select:focus {
+    outline: none;
+    border-color: #27247B;
+}
+
+/* =====================================================
+   TAB BADGE (pending count pill)
+===================================================== */
+.tab-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #e53e3e;
+    color: #fff;
+    font-size: .7rem;
+    font-weight: 700;
+    min-width: 18px;
+    height: 18px;
+    border-radius: 9px;
+    padding: 0 5px;
+    margin-left: 6px;
+    vertical-align: middle;
+}
+
+/* =====================================================
+   MEMBER ID CHIP (table cell)
+===================================================== */
+.member-id-chip {
+    font-family: monospace;
+    font-size: .85rem;
+    background: #f1f5f9;
+    padding: 2px 8px;
+    border-radius: 4px;
+    color: #444;
+    letter-spacing: .5px;
+}
+
+/* =====================================================
+   APPLICATION STATS ROW
+===================================================== */
+.app-stats-row {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.stat-box {
+    flex: 1;
+    padding: 1rem;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.stat-box--total   { background: #d5f5ff; }
+.stat-box--pending { background: #f4eed5; }
+.stat-box--accepted { background: #d8eede; }
+
+.stat-num {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #333;
+}
+
+.stat-num--pending  { color: #b7791f; }
+.stat-num--accepted { color: #276749; }
+
+.stat-lbl {
+    font-size: .85rem;
+    color: #666;
+    margin-top: .2rem;
+}
+
+/* =====================================================
+   APPLICATION CARDS
+===================================================== */
+.application-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+}
+
+.applicant-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.applicant-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: #27247B;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+.applicant-info {
+    flex: 1;
+}
+
+.applicant-name {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #222;
+}
+
+.app-type-badge {
+    font-size: .75rem;
+    background: #e9ecef;
+    padding: 2px 8px;
+    border-radius: 12px;
+    margin-left: .5rem;
+    font-weight: 500;
+    color: #444;
+}
+
+.applicant-contact {
+    margin: .25rem 0 0;
+    font-size: .85rem;
+    color: #666;
+}
+
+.app-status-badge {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: .8rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.app-status-badge--pending  { background: #fffbea; color: #b7791f; }
+.app-status-badge--accepted { background: #f0fff4; color: #276749; }
+.app-status-badge--declined { background: #fde8e8; color: #c53030; }
+
+.app-details-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: .5rem .75rem;
+    font-size: .85rem;
+    margin-bottom: 1rem;
+}
+
+.app-detail-label {
+    color: #888;
+    display: block;
+    font-size: .78rem;
+    margin-bottom: 2px;
+}
+
+.app-footer {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    border-top: 1px solid #f0f0f0;
+    padding-top: .75rem;
+    flex-wrap: wrap;
+}
+
+.app-member-id {
+    font-size: .85rem;
+    color: #276749;
+    flex: 1;
+}
+
+.app-declined-label {
+    font-size: .85rem;
+    color: #c53030;
+    flex: 1;
+}
+
+.app-renew-note {
+    font-size: .85rem;
+    color: #666;
+}
+
+.form-inline {
+    display: inline;
+}
+
+/* Application action buttons */
+.btn-app-accept,
+.btn-app-decline,
+.btn-app-delete {
+    padding: .45rem 1rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: .85rem;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+}
+
+.btn-app-accept  { background: #276749; color: #fff; }
+.btn-app-decline { background: #c53030; color: #fff; }
+
+.btn-app-delete {
+    padding: .35rem .75rem;
+    background: transparent;
+    color: #999;
+    border: 1px solid #d1d5db;
+    font-size: .8rem;
+}
+
+.btn-app-accept:hover  { background: #1f5137; }
+.btn-app-decline:hover { background: #9b2424; }
+.btn-app-delete:hover  { background: #f7f7f7; color: #666; }
+
 .modal-overlay {
     display: none;
     position: fixed;

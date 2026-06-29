@@ -29,7 +29,7 @@
                 </div>
 
                 <div class="apps-card">
-                    <h4><i class="fas fa-file-alt"></i> Applications</h4>
+                    <h4><i class="fas fa-file-alt"></i> Careers</h4>
                     <% jobs.forEach(job => { %>
                     <a href="/careers/applications/<%= job.id %>" class="app-row">
                         <span class="app-count <%= (appCounts[job.id] || 0) === 0 ? 'zero' : '' %>">
