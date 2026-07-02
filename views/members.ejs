@@ -71,6 +71,7 @@
             <table class="admin-table">
                 <thead>
                     <tr>
+                        <th>Photo</th>
                         <th>Member ID</th>
                         <th>Name</th>
                         <th>Company / Hotel</th>
@@ -86,8 +87,15 @@
                     <tr data-name="<%= m.full_name.toLowerCase() %>"
                         data-company="<%= (m.company || '').toLowerCase() %>"
                         data-vstatus="<%= status %>">
+                        <td>
+                            <% if (m.image_path) { %>
+                                <img src="<%= m.image_path %>" alt="<%= m.full_name %>" class="table-avatar">
+                            <% } else { %>
+                                <div class="table-avatar table-avatar--placeholder"><%= m.full_name.charAt(0) %></div>
+                            <% } %>
+                        </td>
                         <td><code class="member-id-chip"><%= m.member_id || '—' %></code></td>
-                        <td><%= m.full_name %></td>
+                        <td><%= m.title ? m.title + ' ' : '' %><%= m.full_name %></td>
                         <td><%= m.company || '—' %></td>
                         <td><%= vt ? vt.toLocaleDateString('en-SG', { year:'numeric', month:'short', day:'numeric' }) : '—' %></td>
                         <td class="actions-cell">
@@ -357,13 +365,24 @@
         <div id="createMemberModal" class="modal-overlay">
             <div class="modal">
                 <h3>Add Member</h3>
-                <form action="/members/create" method="POST">
+                <form action="/members/create" method="POST" enctype="multipart/form-data">
+                    <label>Title</label>
+                    <select name="title">
+                        <option value="">—</option>
+                        <option>Mr</option>
+                        <option>Mrs</option>
+                        <option>Ms</option>
+                        <option>Dr</option>
+                        <option>Prof</option>
+                    </select>
                     <label>Full Name</label>
                     <input type="text" name="full_name" required>
                     <label>Company / Hotel</label>
                     <input type="text" name="company">
                     <label>Valid Till</label>
                     <input type="date" name="valid_till">
+                    <label>Photo</label>
+                    <input type="file" name="image" accept="image/*">
                     <div class="modal-actions">
                         <button type="button" class="btn-cancel" onclick="closeModal('createMemberModal')">Cancel</button>
                         <button type="submit" class="btn-update">Add Member</button>
@@ -376,13 +395,28 @@
         <div id="editMemberModal" class="modal-overlay">
             <div class="modal">
                 <h3>Edit Member</h3>
-                <form id="editMemberForm" method="POST">
+                <form id="editMemberForm" method="POST" enctype="multipart/form-data">
+                    <label>Title</label>
+                    <select name="title" id="edit-member-title">
+                        <option value="">—</option>
+                        <option>Mr</option>
+                        <option>Mrs</option>
+                        <option>Ms</option>
+                        <option>Dr</option>
+                        <option>Prof</option>
+                    </select>
                     <label>Full Name</label>
                     <input type="text" name="full_name" id="edit-member-name" required>
                     <label>Company / Hotel</label>
                     <input type="text" name="company" id="edit-member-company">
                     <label>Valid Till</label>
                     <input type="date" name="valid_till" id="edit-member-valid">
+                    <div id="edit-member-photo-preview" class="current-photo-preview" style="display:none;">
+                        <img id="edit-member-photo-img" src="" alt="Current photo">
+                        <span>Current photo</span>
+                    </div>
+                    <label>Photo (leave blank to keep current)</label>
+                    <input type="file" name="image" accept="image/*">
                     <div class="modal-actions">
                         <button type="button" class="btn-cancel" onclick="closeModal('editMemberModal')">Cancel</button>
                         <button type="submit" class="btn-update">Save Changes</button>
@@ -598,10 +632,20 @@
 
         // ===== EDIT ARDE MEMBER =====
         function openEditMember(m) {
+            document.getElementById('edit-member-title').value = m.title || '';
             document.getElementById('edit-member-name').value = m.full_name;
             document.getElementById('edit-member-company').value = m.company || '';
             document.getElementById('edit-member-valid').value = m.valid_till ? m.valid_till.split('T')[0] : '';
             document.getElementById('editMemberForm').action = '/members/update/' + m.id;
+
+            const preview = document.getElementById('edit-member-photo-preview');
+            if (m.image_path) {
+                document.getElementById('edit-member-photo-img').src = m.image_path;
+                preview.style.display = 'flex';
+            } else {
+                preview.style.display = 'none';
+            }
+
             openModal('editMemberModal');
         }
 
