@@ -432,6 +432,44 @@
     letter-spacing: .5px;
 }
 
+/* ARDE Members table — photo thumbnail */
+.table-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.table-avatar--placeholder {
+    background: linear-gradient(135deg, #27247B, #96CDF6);
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+/* Edit-modal current photo preview */
+.current-photo-preview {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.current-photo-preview img {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.current-photo-preview span {
+    font-size: 12px;
+    color: #858796;
+}
+
 /* =====================================================
    APPLICATION STATS ROW
 ===================================================== */
