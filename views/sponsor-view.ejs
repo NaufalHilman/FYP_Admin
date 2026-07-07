@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Sponsor</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/styles/careers.css">
+    <style>
+        .view-shell {
+            background: #fff;
+            border: 1px solid #e9ebf5;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 6px 18px rgba(39, 36, 123, 0.05);
+        }
+
+        .view-grid {
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            gap: 24px;
+            align-items: start;
+        }
+
+        .view-logo {
+            width: 100%;
+            max-width: 220px;
+            aspect-ratio: 1;
+            object-fit: cover;
+            border-radius: 12px;
+            border: 1px solid #eef0fb;
+            background: #f8f9fc;
+        }
+
+        .view-field {
+            margin-bottom: 16px;
+        }
+
+        .view-label {
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: #777;
+            margin-bottom: 6px;
+        }
+
+        .view-value {
+            font-size: 15px;
+            color: #222;
+        }
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .status-active {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .status-hidden {
+            background: #f3f4f6;
+            color: #6b7280;
+        }
+
+        .detail-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 24px;
+            flex-wrap: wrap;
+        }
+
+        .btn-outline {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 14px;
+            border-radius: 6px;
+            background: #fff;
+            border: 1px solid #d6dce9;
+            color: #444;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .btn-outline:hover {
+            border-color: #27247B;
+            color: #27247B;
+        }
+    </style>
+</head>
+<body>
+    <%- include('../partials/sidebar') %>
+    <%- include('../partials/header') %>
+
+    <main class="content">
+        <div class="page-header">
+            <div>
+                <h1>View Sponsor</h1>
+                <p class="page-subtitle">Detailed sponsor information</p>
+            </div>
+            <a href="/sponsors" class="btn-cancel"><i class="fas fa-arrow-left"></i> Back</a>
+        </div>
+
+        <div class="view-shell">
+            <div class="view-grid">
+                <div>
+                    <img class="view-logo" src="<%= sponsor.logo_path || '/images/placeholder.jpg' %>" alt="<%= sponsor.company_name %> logo">
+                </div>
+                <div>
+                    <div class="view-field">
+                        <div class="view-label">Company Name</div>
+                        <div class="view-value"><%= sponsor.company_name %></div>
+                    </div>
+                    <div class="view-field">
+                        <div class="view-label">Category</div>
+                        <div class="view-value"><%= sponsor.category %></div>
+                    </div>
+                    <div class="view-field">
+                        <div class="view-label">Description</div>
+                        <div class="view-value"><%= sponsor.description || 'No description provided.' %></div>
+                    </div>
+                    <div class="view-field">
+                        <div class="view-label">Website</div>
+                        <div class="view-value">
+                            <% if (sponsor.website) { %>
+                            <a href="<%= sponsor.website %>" target="_blank" rel="noopener noreferrer"><%= sponsor.website %></a>
+                            <% } else { %>
+                            <span style="color:#999;">—</span>
+                            <% } %>
+                        </div>
+                    </div>
+                    <div class="view-field">
+                        <div class="view-label">Status</div>
+                        <div class="view-value">
+                            <span class="status-pill <%= sponsor.status === 'Active' ? 'status-active' : 'status-hidden' %>"><%= sponsor.status %></span>
+                        </div>
+                    </div>
+                    <div class="view-field">
+                        <div class="view-label">Created Date</div>
+                        <div class="view-value"><%= new Date(sponsor.created_at).toLocaleDateString('en-SG', { day: 'numeric', month: 'short', year: 'numeric' }) %></div>
+                    </div>
+
+                    <div class="detail-actions">
+                        <a href="/sponsors/view/<%= sponsor.id %>?edit=1" class="btn-outline"><i class="fas fa-edit"></i> Edit</a>
+                        <form action="/sponsors/delete/<%= sponsor.id %>" method="POST" onsubmit="return confirm('Delete this sponsor?')" style="display:inline;">
+                            <button type="submit" class="btn-remove"><i class="fas fa-trash"></i> Delete</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <% if (editMode) { %>
+        <div class="view-shell" style="margin-top:20px;">
+            <h3 style="margin-top:0;">Edit Sponsor</h3>
+            <form action="/sponsors/update/<%= sponsor.id %>" method="POST" enctype="multipart/form-data">
+                <div class="modal-row">
+                    <div>
+                        <label>Company Name</label>
+                        <input type="text" name="company_name" value="<%= sponsor.company_name %>" required>
+                    </div>
+                    <div>
+                        <label>Category</label>
+                        <select name="category" required>
+                            <option value="Sponsor" <%= sponsor.category === 'Sponsor' ? 'selected' : '' %>>Sponsor</option>
+                            <option value="Partner" <%= sponsor.category === 'Partner' ? 'selected' : '' %>>Partner</option>
+                        </select>
+                    </div>
+                </div>
+
+                <label>Description</label>
+                <textarea name="description" rows="4"><%= sponsor.description || '' %></textarea>
+
+                <div class="modal-row">
+                    <div>
+                        <label>Website</label>
+                        <input type="text" name="website" value="<%= sponsor.website || '' %>">
+                    </div>
+                    <div>
+                        <label>Status</label>
+                        <select name="status">
+                            <option value="Active" <%= sponsor.status === 'Active' ? 'selected' : '' %>>Active</option>
+                            <option value="Hidden" <%= sponsor.status === 'Hidden' ? 'selected' : '' %>>Hidden</option>
+                        </select>
+                    </div>
+                </div>
+
+                <label>Replace Logo</label>
+                <div class="img-preview-wrap">
+                    <img src="<%= sponsor.logo_path || '/images/placeholder.jpg' %>" alt="Current logo">
+                    <label class="btn-upload-label">
+                        <i class="fa fa-upload"></i>
+                        <span>Choose New Logo</span>
+                        <input type="file" name="image" accept="image/*" hidden>
+                    </label>
+                </div>
+
+                <div class="modal-actions">
+                    <a href="/sponsors/view/<%= sponsor.id %>" class="btn-cancel">Cancel</a>
+                    <button type="submit" class="btn-update">Save Changes</button>
+                </div>
+            </form>
+        </div>
+        <% } %>
+    </main>
+</body>
+</html>

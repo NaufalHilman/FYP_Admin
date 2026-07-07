@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sponsors & Partnerships</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/styles/careers.css">
+    <style>
+        .page-subtitle {
+            font-size: 13px;
+            color: #888;
+            margin-top: 4px;
+        }
+
+        .table-card {
+            background: #fff;
+            border: 1px solid #e9ebf5;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 6px 18px rgba(39, 36, 123, 0.05);
+        }
+
+        .admin-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .admin-table th,
+        .admin-table td {
+            padding: 12px 14px;
+            text-align: left;
+            border-bottom: 1px solid #f0f2f8;
+            font-size: 13px;
+            vertical-align: middle;
+        }
+
+        .admin-table th {
+            background: #f8f9fc;
+            color: #555;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            font-size: 11px;
+        }
+
+        .sponsor-logo {
+            width: 54px;
+            height: 54px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 1px solid #e9ebf5;
+            background: #f8f9fc;
+        }
+
+        .entity-title {
+            font-weight: 700;
+            color: #222;
+            margin-bottom: 2px;
+        }
+
+        .entity-sub {
+            font-size: 12px;
+            color: #888;
+        }
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .status-active {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .status-hidden {
+            background: #f3f4f6;
+            color: #6b7280;
+        }
+
+        .action-links {
+            display: flex;
+            gap: 7px;
+            flex-wrap: wrap;
+        }
+
+        .btn-table {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 6px 10px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 12px;
+            font-weight: 600;
+            border: 1px solid transparent;
+        }
+
+        .btn-view {
+            color: #27247B;
+            background: #eef0fb;
+        }
+
+        .btn-edit {
+            color: #0f766e;
+            background: #ecfeff;
+        }
+
+        .btn-delete {
+            color: #e11d48;
+            background: #fef2f2;
+        }
+
+        .btn-table:hover {
+            filter: brightness(0.97);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 44px 16px;
+            color: #888;
+        }
+
+        .modal textarea {
+            resize: vertical;
+            min-height: 90px;
+        }
+
+        .modal-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .img-preview-wrap {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+        }
+
+        .img-preview-wrap img {
+            width: 72px;
+            height: 72px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 1px solid #eee;
+            background: #f8f9fc;
+        }
+
+        .btn-upload-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 12px;
+            background: #f8f9fc;
+            border: 1px dashed #ccc;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            color: #555;
+        }
+
+        .btn-upload-label:hover {
+            border-color: #27247B;
+            color: #27247B;
+        }
+    </style>
+</head>
+<body>
+    <%- include('../partials/sidebar') %>
+    <%- include('../partials/header') %>
+
+    <main class="content">
+        <div class="page-header">
+            <div>
+                <h1>Sponsors & Partnerships</h1>
+                <p class="page-subtitle">Manage sponsors and partners across the admin portal</p>
+            </div>
+            <button class="btn-update" onclick="openCreateModal()"><i class="fas fa-plus"></i> New Sponsor</button>
+        </div>
+
+        <% if (error) { %>
+        <div class="alert-error" style="margin-bottom:16px;"><i class="fas fa-exclamation-circle"></i> <%= error %></div>
+        <% } %>
+        <% if (notice) { %>
+        <div class="alert-notice" style="margin-bottom:16px;"><i class="fas fa-check-circle"></i> <%= notice %></div>
+        <% } %>
+
+        <div class="main-layout">
+            <aside class="sidebar-info">
+                <div class="stats-row-card">
+                    <div class="stats-mini">
+                        <div class="stats-num"><%= sponsors.length %></div>
+                        <div class="stats-label">Total Sponsors</div>
+                    </div>
+                    <div class="stats-divider"></div>
+                    <div class="stats-mini">
+                        <div class="stats-num" style="color:#2e7d32;"><%= sponsors.filter(s => s.status === 'Active').length %></div>
+                        <div class="stats-label">Active</div>
+                    </div>
+                </div>
+
+                <div class="apps-card">
+                    <h4><i class="fas fa-handshake"></i> Quick List</h4>
+                    <% sponsors.forEach(sponsor => { %>
+                    <a href="/sponsors/view/<%= sponsor.id %>" class="app-row">
+                        <span class="app-label"><%= sponsor.company_name %></span>
+                        <i class="fas fa-chevron-right app-arrow"></i>
+                    </a>
+                    <% }) %>
+                </div>
+            </aside>
+
+            <section style="flex:1;min-width:0;">
+                <div class="table-card">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Logo</th>
+                                <th>Company Name</th>
+                                <th>Category</th>
+                                <th>Website</th>
+                                <th>Status</th>
+                                <th>Created Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% sponsors.forEach(sponsor => { %>
+                            <tr>
+                                <td>
+                                    <img class="sponsor-logo" src="<%= sponsor.logo_path || '/images/placeholder.jpg' %>" alt="<%= sponsor.company_name %> logo">
+                                </td>
+                                <td>
+                                    <div class="entity-title"><%= sponsor.company_name %></div>
+                                    <div class="entity-sub"><%= sponsor.description ? sponsor.description.substring(0, 70) + (sponsor.description.length > 70 ? '…' : '') : 'No description' %></div>
+                                </td>
+                                <td><%= sponsor.category %></td>
+                                <td>
+                                    <% if (sponsor.website) { %>
+                                    <a href="<%= sponsor.website %>" target="_blank" rel="noopener noreferrer"><%= sponsor.website %></a>
+                                    <% } else { %>
+                                    <span style="color:#999;">—</span>
+                                    <% } %>
+                                </td>
+                                <td>
+                                    <span class="status-pill <%= sponsor.status === 'Active' ? 'status-active' : 'status-hidden' %>">
+                                        <%= sponsor.status %>
+                                    </span>
+                                </td>
+                                <td><%= new Date(sponsor.created_at).toLocaleDateString('en-SG', { day: 'numeric', month: 'short', year: 'numeric' }) %></td>
+                                <td>
+                                    <div class="action-links">
+                                        <a class="btn-table btn-view" href="/sponsors/view/<%= sponsor.id %>"><i class="fas fa-eye"></i> View</a>
+                                        <a class="btn-table btn-edit" href="/sponsors/view/<%= sponsor.id %>?edit=1"><i class="fas fa-edit"></i> Edit</a>
+                                        <form action="/sponsors/delete/<%= sponsor.id %>" method="POST" onsubmit="return confirm('Delete this sponsor?')" style="display:inline;">
+                                            <button type="submit" class="btn-table btn-delete"><i class="fas fa-trash"></i> Delete</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            <% }) %>
+                        </tbody>
+                    </table>
+
+                    <% if (sponsors.length === 0) { %>
+                    <div class="empty-state">
+                        <i class="fas fa-handshake" style="font-size:2rem;margin-bottom:10px;display:block;"></i>
+                        No sponsors have been added yet.
+                    </div>
+                    <% } %>
+                </div>
+            </section>
+        </div>
+
+        <div id="createModal" class="modal-overlay" style="display:none;">
+            <div class="modal">
+                <h3><i class="fas fa-plus" style="margin-right:8px;"></i>Create New Sponsor</h3>
+                <form action="/sponsors/create" method="POST" enctype="multipart/form-data">
+                    <div class="modal-row">
+                        <div>
+                            <label>Company Name</label>
+                            <input type="text" name="company_name" required>
+                        </div>
+                        <div>
+                            <label>Category</label>
+                            <select name="category" required>
+                                <option value="Sponsor">Sponsor</option>
+                                <option value="Partner">Partner</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <label>Description</label>
+                    <textarea name="description" rows="4"></textarea>
+
+                    <div class="modal-row">
+                        <div>
+                            <label>Website</label>
+                            <input type="text" name="website" placeholder="https://example.com">
+                        </div>
+                        <div>
+                            <label>Status</label>
+                            <select name="status">
+                                <option value="Active">Active</option>
+                                <option value="Hidden">Hidden</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <label>Logo</label>
+                    <div class="img-preview-wrap">
+                        <img id="new-sponsor-preview" src="/images/placeholder.jpg" alt="Sponsor preview">
+                        <label class="btn-upload-label">
+                            <i class="fa fa-upload"></i>
+                            <span>Choose Logo</span>
+                            <input type="file" name="image" accept="image/*" hidden onchange="previewImage(this, 'new-sponsor-preview')">
+                        </label>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button type="button" class="btn-cancel" onclick="closeCreateModal()">Cancel</button>
+                        <button type="submit" class="btn-update">Create</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        function previewImage(input, previewId) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    document.getElementById(previewId).src = e.target.result;
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function openCreateModal() {
+            document.getElementById('createModal').style.display = 'flex';
+        }
+
+        function closeCreateModal() {
+            document.getElementById('createModal').style.display = 'none';
+        }
+
+        document.getElementById('createModal').addEventListener('click', function (e) {
+            if (e.target === this) closeCreateModal();
+        });
+    </script>
+</body>
+</html>

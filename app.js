@@ -37,6 +37,28 @@ db.query('SELECT 1')
   .then(() => console.log('Database connection successful!'))
   .catch((err) => console.error('Database connection failed:', err.message));
 
+async function ensureSponsorsTable() {
+    try {
+        await db.query(`
+            CREATE TABLE IF NOT EXISTS sponsors (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                company_name VARCHAR(255) NOT NULL,
+                category VARCHAR(50) NOT NULL,
+                description TEXT,
+                website VARCHAR(255),
+                logo_path VARCHAR(255),
+                status VARCHAR(20) DEFAULT 'Active',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        console.log('Sponsors table ready');
+    } catch (err) {
+        console.error('Error ensuring sponsors table:', err.message);
+    }
+}
+
+ensureSponsorsTable();
+
 // Auth routes
 app.get('/', (req, res) => res.redirect('/login'));
 
@@ -927,6 +949,88 @@ app.post('/awards/winners/remove/:winner_id', isAuthenticated, async (req, res) 
     } catch (err) {
         console.error(err);
         res.status(500).send('Error removing winner');
+    }
+});
+
+// =====================================================
+// SPONSORS & PARTNERSHIPS — ADMIN ROUTES
+// =====================================================
+
+app.get('/sponsors', isAuthenticated, async (req, res) => {
+    try {
+        const [sponsors] = await db.query('SELECT * FROM sponsors ORDER BY created_at DESC');
+        res.render('sponsors', {
+            sponsors,
+            error: req.query.error || null,
+            notice: req.query.notice || null
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Server Error');
+    }
+});
+
+app.post('/sponsors/create', isAuthenticated, uploadImage.single('image'), async (req, res) => {
+    const { company_name, category, description, website, status } = req.body;
+    const logo_path = req.file ? req.file.path : null;
+    try {
+        await db.query(
+            'INSERT INTO sponsors (company_name, category, description, website, logo_path, status) VALUES (?, ?, ?, ?, ?, ?)',
+            [company_name, category, description, website, logo_path, status || 'Active']
+        );
+        res.redirect('/sponsors?notice=' + encodeURIComponent('Sponsor created successfully.'));
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Error creating sponsor');
+    }
+});
+
+app.get('/sponsors/view/:id', isAuthenticated, async (req, res) => {
+    try {
+        const [[sponsor]] = await db.query('SELECT * FROM sponsors WHERE id = ?', [req.params.id]);
+        if (!sponsor) {
+            return res.redirect('/sponsors?error=' + encodeURIComponent('Sponsor not found.'));
+        }
+        res.render('sponsor-view', {
+            sponsor,
+            editMode: req.query.edit === '1'
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Server Error');
+    }
+});
+
+app.post('/sponsors/update/:id', isAuthenticated, uploadImage.single('image'), async (req, res) => {
+    const { company_name, category, description, website, status } = req.body;
+    const { id } = req.params;
+    try {
+        if (req.file) {
+            await db.query(
+                'UPDATE sponsors SET company_name=?, category=?, description=?, website=?, logo_path=?, status=? WHERE id=?',
+                [company_name, category, description, website, req.file.path, status || 'Active', id]
+            );
+        } else {
+            await db.query(
+                'UPDATE sponsors SET company_name=?, category=?, description=?, website=?, status=? WHERE id=?',
+                [company_name, category, description, website, status || 'Active', id]
+            );
+        }
+        res.redirect(`/sponsors/view/${id}?notice=` + encodeURIComponent('Sponsor updated successfully.'));
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Error updating sponsor');
+    }
+});
+
+app.post('/sponsors/delete/:id', isAuthenticated, async (req, res) => {
+    const { id } = req.params;
+    try {
+        await db.query('DELETE FROM sponsors WHERE id = ?', [id]);
+        res.redirect('/sponsors?notice=' + encodeURIComponent('Sponsor deleted successfully.'));
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Error deleting sponsor');
     }
 });
 
