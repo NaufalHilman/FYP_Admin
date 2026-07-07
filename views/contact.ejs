@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Settings — ARDE Admin</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f4f7fb;
+            color: #1f2937;
+        }
+
+        .main-content {
+            margin-left: 260px;
+            padding: 32px;
+        }
+
+        .page-card {
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+            padding: 28px;
+        }
+
+        .page-header {
+            margin-bottom: 32px;
+        }
+
+        .page-title {
+            margin: 0 0 8px;
+            font-size: 28px;
+            color: #27247B;
+            font-weight: 700;
+        }
+
+        .page-subtitle {
+            margin: 0;
+            color: #64748b;
+            font-size: 14px;
+        }
+
+        .tabs-nav {
+            display: flex;
+            gap: 0;
+            border-bottom: 2px solid #e2e8f0;
+            margin: 24px 0;
+        }
+
+        .tab-btn {
+            padding: 12px 20px;
+            border: none;
+            background: none;
+            color: #94a3b8;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 600;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+            transition: all 0.3s ease;
+        }
+
+        .tab-btn:hover {
+            color: #475569;
+        }
+
+        .tab-btn.active {
+            color: #27247B;
+            border-bottom-color: #27247B;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .alert {
+            margin-bottom: 20px;
+            padding: 12px 14px;
+            border-radius: 10px;
+            font-size: 14px;
+        }
+
+        .alert-success {
+            background: #ecfdf3;
+            color: #166534;
+            border: 1px solid #a7f3d0;
+        }
+
+        .alert-error {
+            background: #fef2f2;
+            color: #b91c1c;
+            border: 1px solid #fecaca;
+        }
+
+        .form-grid {
+            display: grid;
+            gap: 18px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .input-group label {
+            font-weight: 600;
+            color: #334155;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid #dbe2ea;
+            border-radius: 10px;
+            font-size: 15px;
+            box-sizing: border-box;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #27247B;
+            box-shadow: 0 0 0 3px rgba(39, 36, 123, 0.12);
+        }
+
+        .form-actions {
+            margin-top: 24px;
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            padding: 12px 18px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: #27247B;
+            color: #fff;
+        }
+
+        .btn-secondary {
+            background: #f1f5f9;
+            color: #334155;
+        }
+
+        .hint {
+            margin-top: 8px;
+            color: #64748b;
+            font-size: 13px;
+        }
+
+        .twitter-logo {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 16px;
+            height: 16px;
+            margin-right: 6px;
+        }
+    </style>
+</head>
+<body>
+    <%- include('../partials/sidebar') %>
+    <%- include('../partials/header') %>
+
+    <main class="main-content">
+        <div class="page-card">
+            <div class="page-header">
+                <h1 class="page-title">Contact Settings</h1>
+                <p class="page-subtitle">Manage your organization's contact information and social media links.</p>
+            </div>
+
+            <% if (notice) { %>
+                <div class="alert alert-success"><%= notice %></div>
+            <% } %>
+
+            <% if (error) { %>
+                <div class="alert alert-error"><%= error %></div>
+            <% } %>
+
+            <div class="tabs-nav">
+                <button class="tab-btn active" data-tab="socials"><i class="fas fa-share-alt"></i> Socials</button>
+                <button class="tab-btn" data-tab="email"><i class="fas fa-envelope"></i> Email Address</button>
+                <button class="tab-btn" data-tab="contact"><i class="fas fa-phone"></i> Contact</button>
+            </div>
+
+            <form action="/contacts/update" method="POST">
+                <!-- Socials Tab -->
+                <div id="socials" class="tab-content active">
+                    <div class="form-grid">
+                        <div class="input-group">
+                            <label for="twitter_url">
+                                <svg class="twitter-logo" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24h-6.656l-5.214-6.817L5.551 21.75H2.228l7.723-8.835L1.5 2.25h6.822l4.822 6.383 5.9-6.383zM17.83 19.325h1.831L6.28 4.322H4.29L17.83 19.325z"/>
+                                </svg>
+                                X / Twitter
+                            </label>
+                            <input id="twitter_url" name="twitter_url" type="url" value="<%= settings.twitter_url || '' %>" placeholder="https://x.com/twitter-handle">
+                            <p class="hint">URL link to your X/Twitter profile</p>
+                        </div>
+
+                        <div class="input-group">
+                            <label for="instagram_url"><i class="fab fa-instagram"></i> Instagram</label>
+                            <input id="instagram_url" name="instagram_url" type="url" value="<%= settings.instagram_url || '' %>" placeholder="https://instagram.com/instagram-handle">
+                            <p class="hint">URL link to your Instagram profile</p>
+                        </div>
+
+                        <div class="input-group">
+                            <label for="linkedin_url"><i class="fab fa-linkedin"></i> LinkedIn</label>
+                            <input id="linkedin_url" name="linkedin_url" type="url" value="<%= settings.linkedin_url || '' %>" placeholder="https://linkedin.com/in/linkedin-profile">
+                            <p class="hint">URL link to your LinkedIn profile</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Email Address Tab -->
+                <div id="email" class="tab-content">
+                    <div class="form-grid">
+                        <div class="input-group">
+                            <label for="email_address">Email Address</label>
+                            <input id="email_address" name="email_address" type="email" placeholder="contact@example.com">
+                            <p class="hint">Primary contact email address</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contact Tab -->
+                <div id="contact" class="tab-content">
+                    <div class="form-grid">
+                        <div class="input-group">
+                            <label for="phone_number">Phone Number</label>
+                            <input id="phone_number" name="phone_number" type="tel" placeholder="(+65) 6123 4567">
+                            <p class="hint">Primary contact phone number</p>
+                        </div>
+                        <div class="input-group">
+                            <label for="address">Address</label>
+                            <input id="address" name="address" type="text" placeholder="123 Example Avenue, #05-01, Singapore 123456">
+                            <p class="hint">Physical office address</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button class="btn btn-primary" type="submit"><i class="fas fa-save"></i> Update Changes</button>
+                    <button class="btn btn-secondary" type="reset"><i class="fas fa-times"></i> Cancel</button>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <script>
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const tabName = this.getAttribute('data-tab');
+                
+                // Remove active class from all tabs and buttons
+                document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                
+                // Add active class to clicked button and corresponding tab
+                this.classList.add('active');
+                document.getElementById(tabName).classList.add('active');
+            });
+        });
+    </script>
+</body>
+</html>

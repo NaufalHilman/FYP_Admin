@@ -57,7 +57,38 @@ async function ensureSponsorsTable() {
     }
 }
 
+async function ensureContactSettingsTable() {
+    try {
+        await db.query(`
+            CREATE TABLE IF NOT EXISTS contact_settings (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                twitter_url VARCHAR(255) DEFAULT '',
+                instagram_url VARCHAR(255) DEFAULT '',
+                linkedin_url VARCHAR(255) DEFAULT '',
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            )
+        `);
+
+        const [rows] = await db.query('SELECT COUNT(*) as count FROM contact_settings');
+        if (rows[0].count === 0) {
+            await db.query(
+                'INSERT INTO contact_settings (twitter_url, instagram_url, linkedin_url) VALUES (?, ?, ?)',
+                ['', '', '']
+            );
+        }
+        console.log('Contact settings table ready');
+    } catch (err) {
+        console.error('Error ensuring contact settings table:', err.message);
+    }
+}
+
 ensureSponsorsTable();
+ensureContactSettingsTable();
+
+async function getContactSettings() {
+    const [rows] = await db.query('SELECT * FROM contact_settings ORDER BY id DESC LIMIT 1');
+    return rows[0] || { twitter_url: '', instagram_url: '', linkedin_url: '' };
+}
 
 // Auth routes
 app.get('/', (req, res) => res.redirect('/login'));
@@ -90,6 +121,56 @@ app.post('/login', async (req, res) => {
 app.get('/logout', (req, res) => {
     req.session = null;
     res.redirect('/login');
+});
+
+// Public contact page
+app.get('/contact', async (req, res) => {
+    try {
+        const settings = await getContactSettings();
+        res.render('public-contact', { settings });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Server Error');
+    }
+});
+
+// Contacts
+app.get('/contacts', isAuthenticated, async (req, res) => {
+    try {
+        const settings = await getContactSettings();
+        res.render('contact', {
+            settings,
+            error: req.query.error || null,
+            notice: req.query.notice || null
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Server Error');
+    }
+});
+
+app.post('/contacts/update', isAuthenticated, async (req, res) => {
+    const { twitter_url, instagram_url, linkedin_url } = req.body;
+    try {
+        const [rows] = await db.query('SELECT * FROM contact_settings ORDER BY id DESC LIMIT 1');
+
+        if (rows.length === 0) {
+            await db.query(
+                'INSERT INTO contact_settings (twitter_url, instagram_url, linkedin_url) VALUES (?, ?, ?)',
+                [twitter_url || '', instagram_url || '', linkedin_url || '']
+            );
+        } else {
+            await db.query(
+                'UPDATE contact_settings SET twitter_url = ?, instagram_url = ?, linkedin_url = ? WHERE id = ?',
+                [twitter_url || '', instagram_url || '', linkedin_url || '', rows[0].id]
+            );
+        }
+
+        res.redirect('/contacts?notice=' + encodeURIComponent('Social links updated successfully.'));
+    } catch (err) {
+        console.error(err);
+        res.redirect('/contacts?error=' + encodeURIComponent('Could not update social links.'));
+    }
 });
 
 // Dashboard
