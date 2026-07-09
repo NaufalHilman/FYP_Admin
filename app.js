@@ -82,8 +82,42 @@ async function ensureContactSettingsTable() {
     }
 }
 
+async function ensureCommunityTables() {
+    try {
+        await db.query(`
+            CREATE TABLE IF NOT EXISTS community_entries (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                title VARCHAR(255) NOT NULL,
+                short_description TEXT,
+                full_description TEXT,
+                display_order INT DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            )
+        `);
+
+        await db.query(`
+            CREATE TABLE IF NOT EXISTS community_images (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                entry_id INT NOT NULL,
+                image_path VARCHAR(500) NOT NULL,
+                display_order INT DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                INDEX (entry_id),
+                CONSTRAINT fk_community_images_entry
+                    FOREIGN KEY (entry_id) REFERENCES community_entries(id)
+                    ON DELETE CASCADE
+            )
+        `);
+        console.log('Community tables ready');
+    } catch (err) {
+        console.error('Error ensuring community tables:', err.message);
+    }
+}
+
 ensureSponsorsTable();
 ensureContactSettingsTable();
+ensureCommunityTables();
 
 async function getContactSettings() {
     const [rows] = await db.query('SELECT * FROM contact_settings ORDER BY id DESC LIMIT 1');
@@ -1036,6 +1070,130 @@ app.post('/awards/winners/remove/:winner_id', isAuthenticated, async (req, res) 
 // =====================================================
 // SPONSORS & PARTNERSHIPS — ADMIN ROUTES
 // =====================================================
+
+// =====================================================
+// COMMUNITY - ADMIN ROUTES
+// =====================================================
+
+async function getCommunityEntries() {
+    const [entries] = await db.query('SELECT * FROM community_entries ORDER BY display_order ASC, created_at DESC');
+    const [images] = await db.query('SELECT * FROM community_images ORDER BY display_order ASC, id ASC');
+    const imagesByEntry = {};
+    images.forEach(image => {
+        if (!imagesByEntry[image.entry_id]) imagesByEntry[image.entry_id] = [];
+        imagesByEntry[image.entry_id].push(image);
+    });
+    return entries.map(entry => ({ ...entry, images: imagesByEntry[entry.id] || [] }));
+}
+
+app.get('/community', isAuthenticated, async (req, res) => {
+    try {
+        const entries = await getCommunityEntries();
+        res.render('community', {
+            entries,
+            error: req.query.error || null,
+            notice: req.query.notice || null
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Server Error');
+    }
+});
+
+app.post('/community/create', isAuthenticated, uploadImage.array('images', 10), async (req, res) => {
+    const { title, short_description, full_description, display_order } = req.body;
+    try {
+        const [result] = await db.query(
+            'INSERT INTO community_entries (title, short_description, full_description, display_order) VALUES (?, ?, ?, ?)',
+            [title, short_description || null, full_description || null, display_order || 0]
+        );
+
+        if (req.files && req.files.length > 0) {
+            for (let i = 0; i < req.files.length; i++) {
+                await db.query(
+                    'INSERT INTO community_images (entry_id, image_path, display_order) VALUES (?, ?, ?)',
+                    [result.insertId, req.files[i].path, i]
+                );
+            }
+        }
+
+        res.redirect('/community?notice=' + encodeURIComponent('Community entry created successfully.'));
+    } catch (err) {
+        console.error(err);
+        res.redirect('/community?error=' + encodeURIComponent('Could not create community entry.'));
+    }
+});
+
+app.post('/community/update/:id', isAuthenticated, uploadImage.array('images', 10), async (req, res) => {
+    const { title, short_description, full_description, display_order } = req.body;
+    const { id } = req.params;
+    try {
+        await db.query(
+            'UPDATE community_entries SET title=?, short_description=?, full_description=?, display_order=? WHERE id=?',
+            [title, short_description || null, full_description || null, display_order || 0, id]
+        );
+
+        if (req.files && req.files.length > 0) {
+            const [[{ max_order }]] = await db.query(
+                'SELECT COALESCE(MAX(display_order), -1) as max_order FROM community_images WHERE entry_id = ?',
+                [id]
+            );
+            for (let i = 0; i < req.files.length; i++) {
+                await db.query(
+                    'INSERT INTO community_images (entry_id, image_path, display_order) VALUES (?, ?, ?)',
+                    [id, req.files[i].path, max_order + i + 1]
+                );
+            }
+        }
+
+        res.redirect('/community?notice=' + encodeURIComponent('Community entry updated successfully.'));
+    } catch (err) {
+        console.error(err);
+        res.redirect('/community?error=' + encodeURIComponent('Could not update community entry.'));
+    }
+});
+
+app.post('/community/delete/:id', isAuthenticated, async (req, res) => {
+    try {
+        await db.query('DELETE FROM community_entries WHERE id = ?', [req.params.id]);
+        res.redirect('/community?notice=' + encodeURIComponent('Community entry deleted successfully.'));
+    } catch (err) {
+        console.error(err);
+        res.redirect('/community?error=' + encodeURIComponent('Could not delete community entry.'));
+    }
+});
+
+app.post('/community/images/update/:image_id', isAuthenticated, uploadImage.single('image'), async (req, res) => {
+    const { image_id } = req.params;
+    const { display_order } = req.body;
+    try {
+        if (req.file) {
+            await db.query(
+                'UPDATE community_images SET image_path=?, display_order=? WHERE id=?',
+                [req.file.path, display_order || 0, image_id]
+            );
+        } else {
+            await db.query(
+                'UPDATE community_images SET display_order=? WHERE id=?',
+                [display_order || 0, image_id]
+            );
+        }
+        res.redirect('/community?notice=' + encodeURIComponent('Community image updated successfully.'));
+    } catch (err) {
+        console.error(err);
+        res.redirect('/community?error=' + encodeURIComponent('Could not update community image.'));
+    }
+});
+
+app.post('/community/images/delete/:image_id', isAuthenticated, async (req, res) => {
+    try {
+        await db.query('DELETE FROM community_images WHERE id = ?', [req.params.image_id]);
+        res.redirect('/community?notice=' + encodeURIComponent('Community image deleted successfully.'));
+    } catch (err) {
+        console.error(err);
+        res.redirect('/community?error=' + encodeURIComponent('Could not delete community image.'));
+    }
+});
 
 app.get('/sponsors', isAuthenticated, async (req, res) => {
     try {

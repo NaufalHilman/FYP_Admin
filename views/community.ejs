@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Community Management</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/styles/careers.css">
+    <style>
+        .page-subtitle { font-size: 13px; color: #888; margin-top: 4px; }
+        .community-card textarea { min-height: 90px; resize: vertical; }
+        .community-card input[type="number"],
+        .modal input[type="number"] {
+            width: 100%;
+            padding: 7px 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #333;
+            outline: none;
+        }
+        .entry-meta {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            color: #777;
+            font-size: 12px;
+            margin-bottom: 10px;
+        }
+        .image-gallery {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+            margin-top: 8px;
+        }
+        .image-item {
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 8px;
+            background: #fafafa;
+        }
+        .image-item img {
+            width: 100%;
+            height: 96px;
+            object-fit: cover;
+            border-radius: 6px;
+            display: block;
+            margin-bottom: 8px;
+        }
+        .image-item form {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .image-actions {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+        .image-actions .btn-update,
+        .image-actions .btn-remove {
+            flex: 1;
+            padding: 5px 8px;
+        }
+        .file-label {
+            height: 36px;
+            border: 1px dashed #ccc;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            color: #777;
+            font-size: 11px;
+            cursor: pointer;
+            background: #fff;
+        }
+        .empty-state {
+            grid-column: 1 / -1;
+            text-align: center;
+            color: #888;
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 48px 20px;
+        }
+        .alert-error,
+        .alert-notice {
+            margin-bottom: 16px;
+            padding: 10px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+        }
+        .alert-error { color: #b91c1c; background: #fef2f2; }
+        .alert-notice { color: #166534; background: #ecfdf5; }
+    </style>
+</head>
+<body>
+    <%- include('../partials/sidebar') %>
+    <%- include('../partials/header') %>
+
+    <main class="content">
+        <div class="page-header">
+            <div>
+                <h1>Community Management</h1>
+                <p class="page-subtitle">Manage public Community page entries and images</p>
+            </div>
+            <button class="btn-update" onclick="openModal()"><i class="fas fa-plus"></i> New Entry</button>
+        </div>
+
+        <% if (error) { %>
+        <div class="alert-error"><i class="fas fa-exclamation-circle"></i> <%= error %></div>
+        <% } %>
+        <% if (notice) { %>
+        <div class="alert-notice"><i class="fas fa-check-circle"></i> <%= notice %></div>
+        <% } %>
+
+        <div class="main-layout">
+            <aside class="sidebar-info">
+                <div class="stats-card">
+                    <div class="stats-num"><%= entries.length %></div>
+                    <div class="stats-label">Community Entries</div>
+                    <div class="stats-sub"><%= entries.reduce((sum, entry) => sum + entry.images.length, 0) %> images</div>
+                </div>
+
+                <div class="apps-card">
+                    <h4><i class="fas fa-comments"></i> Entries</h4>
+                    <% entries.forEach(entry => { %>
+                    <a href="#entry-<%= entry.id %>" class="app-row">
+                        <span class="app-count"><%= entry.display_order || 0 %></span>
+                        <span class="app-label"><%= entry.title %></span>
+                        <i class="fas fa-chevron-right app-arrow"></i>
+                    </a>
+                    <% }) %>
+                </div>
+            </aside>
+
+            <section class="job-grid" id="communityGrid">
+                <% if (entries.length === 0) { %>
+                <div class="empty-state">
+                    <i class="fas fa-comments" style="font-size:2rem;margin-bottom:10px;display:block;"></i>
+                    No community entries have been added yet.
+                </div>
+                <% } %>
+
+                <% entries.forEach(entry => { %>
+                <div class="job-card community-card" id="entry-<%= entry.id %>" data-title="<%= entry.title.toLowerCase() %>">
+                    <form action="/community/update/<%= entry.id %>" method="POST" enctype="multipart/form-data">
+                        <div class="entry-meta">
+                            <span>Created <%= new Date(entry.created_at).toLocaleDateString('en-SG', { day: 'numeric', month: 'short', year: 'numeric' }) %></span>
+                            <span>Updated <%= new Date(entry.updated_at).toLocaleDateString('en-SG', { day: 'numeric', month: 'short', year: 'numeric' }) %></span>
+                        </div>
+
+                        <label>Title</label>
+                        <input type="text" name="title" value="<%= entry.title %>" required>
+
+                        <label>Short Description</label>
+                        <textarea name="short_description" rows="3"><%= entry.short_description || '' %></textarea>
+
+                        <label>Full Description</label>
+                        <textarea name="full_description" rows="5"><%= entry.full_description || '' %></textarea>
+
+                        <label>Display Order</label>
+                        <input type="number" name="display_order" value="<%= entry.display_order || 0 %>">
+
+                        <label>Add Images</label>
+                        <div class="img-row">
+                            <div class="img-thumb">
+                                <img id="add-preview-<%= entry.id %>" src="<%= entry.images[0] ? entry.images[0].image_path : '/images/placeholder.jpg' %>" alt="">
+                            </div>
+                            <label class="img-placeholder">
+                                <i class="fa fa-upload"></i>
+                                <span>Add Images</span>
+                                <input type="file" name="images" accept="image/*" multiple hidden onchange="previewFirstImage(this, 'add-preview-<%= entry.id %>')">
+                            </label>
+                        </div>
+
+                        <div class="card-actions">
+                            <button type="submit" class="btn-update">UPDATE ENTRY</button>
+                        </div>
+                    </form>
+
+                    <% if (entry.images.length > 0) { %>
+                    <label>Existing Images</label>
+                    <div class="image-gallery">
+                        <% entry.images.forEach(image => { %>
+                        <div class="image-item">
+                            <img src="<%= image.image_path %>" alt="<%= entry.title %> image">
+                            <form action="/community/images/update/<%= image.id %>" method="POST" enctype="multipart/form-data">
+                                <label>Image Order</label>
+                                <input type="number" name="display_order" value="<%= image.display_order || 0 %>">
+                                <label class="file-label">
+                                    <i class="fa fa-upload"></i>
+                                    <span>Replace</span>
+                                    <input type="file" name="image" accept="image/*" hidden>
+                                </label>
+                                <button type="submit" class="btn-update">SAVE IMAGE</button>
+                            </form>
+                            <form action="/community/images/delete/<%= image.id %>" method="POST" onsubmit="return confirm('Delete this image?')">
+                                <button type="submit" class="btn-remove" style="width:100%;">DELETE IMAGE</button>
+                            </form>
+                        </div>
+                        <% }) %>
+                    </div>
+                    <% } %>
+
+                    <form action="/community/delete/<%= entry.id %>" method="POST" onsubmit="return confirm('Delete this community entry?')">
+                        <button type="submit" class="btn-remove">REMOVE ENTRY</button>
+                    </form>
+                </div>
+                <% }) %>
+            </section>
+        </div>
+
+        <div id="createModal" class="modal-overlay" style="display:none;">
+            <div class="modal">
+                <h3>Create Community Entry</h3>
+                <form action="/community/create" method="POST" enctype="multipart/form-data">
+                    <label>Title</label>
+                    <input type="text" name="title" required>
+
+                    <label>Short Description</label>
+                    <textarea name="short_description" rows="3"></textarea>
+
+                    <label>Full Description</label>
+                    <textarea name="full_description" rows="5"></textarea>
+
+                    <label>Display Order</label>
+                    <input type="number" name="display_order" value="0">
+
+                    <label>Images</label>
+                    <div class="img-row">
+                        <div class="img-thumb">
+                            <img id="new-preview" src="/images/placeholder.jpg" alt="">
+                        </div>
+                        <label class="img-placeholder">
+                            <i class="fa fa-upload"></i>
+                            <span>Choose Images</span>
+                            <input type="file" name="images" accept="image/*" multiple hidden onchange="previewFirstImage(this, 'new-preview')">
+                        </label>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button type="button" class="btn-cancel" onclick="closeModal()">Cancel</button>
+                        <button type="submit" class="btn-update">Create</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        function previewFirstImage(input, previewId) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    document.getElementById(previewId).src = e.target.result;
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function openModal() {
+            document.getElementById('createModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('createModal').style.display = 'none';
+        }
+
+        document.getElementById('createModal').addEventListener('click', function (e) {
+            if (e.target === this) closeModal();
+        });
+    </script>
+</body>
+</html>
