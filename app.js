@@ -65,15 +65,39 @@ async function ensureContactSettingsTable() {
                 twitter_url VARCHAR(255) DEFAULT '',
                 instagram_url VARCHAR(255) DEFAULT '',
                 linkedin_url VARCHAR(255) DEFAULT '',
+                email_address VARCHAR(255) DEFAULT '',
+                phone_number VARCHAR(255) DEFAULT '',
+                address TEXT,
+                website_url VARCHAR(255) DEFAULT '',
+                map_url VARCHAR(255) DEFAULT '',
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
             )
         `);
 
+        const [columns] = await db.query(
+            "SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'contact_settings'"
+        );
+        const existingColumns = new Set(columns.map(column => column.COLUMN_NAME));
+
+        const columnsToAdd = [
+            ['email_address', "VARCHAR(255) DEFAULT ''"],
+            ['phone_number', "VARCHAR(255) DEFAULT ''"],
+            ['address', 'TEXT'],
+            ['website_url', "VARCHAR(255) DEFAULT ''"],
+            ['map_url', "VARCHAR(255) DEFAULT ''"]
+        ];
+
+        for (const [columnName, columnDefinition] of columnsToAdd) {
+            if (!existingColumns.has(columnName)) {
+                await db.query(`ALTER TABLE contact_settings ADD COLUMN ${columnName} ${columnDefinition}`);
+            }
+        }
+
         const [rows] = await db.query('SELECT COUNT(*) as count FROM contact_settings');
         if (rows[0].count === 0) {
             await db.query(
-                'INSERT INTO contact_settings (twitter_url, instagram_url, linkedin_url) VALUES (?, ?, ?)',
-                ['', '', '']
+                'INSERT INTO contact_settings (twitter_url, instagram_url, linkedin_url, email_address, phone_number, address, website_url, map_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+                ['', '', '', '', '', '', '', '']
             );
         }
         console.log('Contact settings table ready');
@@ -121,7 +145,16 @@ ensureCommunityTables();
 
 async function getContactSettings() {
     const [rows] = await db.query('SELECT * FROM contact_settings ORDER BY id DESC LIMIT 1');
-    return rows[0] || { twitter_url: '', instagram_url: '', linkedin_url: '' };
+    return rows[0] || {
+        twitter_url: '',
+        instagram_url: '',
+        linkedin_url: '',
+        email_address: '',
+        phone_number: '',
+        address: '',
+        website_url: '',
+        map_url: ''
+    };
 }
 
 // Auth routes
@@ -175,7 +208,8 @@ app.get('/contacts', isAuthenticated, async (req, res) => {
         res.render('contact', {
             settings,
             error: req.query.error || null,
-            notice: req.query.notice || null
+            notice: req.query.notice || null,
+            tab: req.query.tab || 'socials'
         });
     } catch (err) {
         console.error(err);
@@ -184,26 +218,41 @@ app.get('/contacts', isAuthenticated, async (req, res) => {
 });
 
 app.post('/contacts/update', isAuthenticated, async (req, res) => {
-    const { twitter_url, instagram_url, linkedin_url } = req.body;
+    const {
+        twitter_url,
+        instagram_url,
+        linkedin_url,
+        email_address,
+        phone_number,
+        address,
+        website_url,
+        map_url,
+        active_tab
+    } = req.body;
+
     try {
         const [rows] = await db.query('SELECT * FROM contact_settings ORDER BY id DESC LIMIT 1');
 
         if (rows.length === 0) {
             await db.query(
-                'INSERT INTO contact_settings (twitter_url, instagram_url, linkedin_url) VALUES (?, ?, ?)',
-                [twitter_url || '', instagram_url || '', linkedin_url || '']
+                'INSERT INTO contact_settings (twitter_url, instagram_url, linkedin_url, email_address, phone_number, address, website_url, map_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+                [twitter_url || '', instagram_url || '', linkedin_url || '', email_address || '', phone_number || '', address || '', website_url || '', map_url || '']
             );
         } else {
             await db.query(
-                'UPDATE contact_settings SET twitter_url = ?, instagram_url = ?, linkedin_url = ? WHERE id = ?',
-                [twitter_url || '', instagram_url || '', linkedin_url || '', rows[0].id]
+                'UPDATE contact_settings SET twitter_url = ?, instagram_url = ?, linkedin_url = ?, email_address = ?, phone_number = ?, address = ?, website_url = ?, map_url = ? WHERE id = ?',
+                [twitter_url || '', instagram_url || '', linkedin_url || '', email_address || '', phone_number || '', address || '', website_url || '', map_url || '', rows[0].id]
             );
         }
 
-        res.redirect('/contacts?notice=' + encodeURIComponent('Social links updated successfully.'));
+        const tab = active_tab && ['socials', 'email', 'contact'].includes(active_tab) ? active_tab : 'socials';
+        const query = new URLSearchParams({ notice: 'Contact details updated successfully.', tab });
+        res.redirect('/contacts?' + query.toString());
     } catch (err) {
         console.error(err);
-        res.redirect('/contacts?error=' + encodeURIComponent('Could not update social links.'));
+        const tab = active_tab && ['socials', 'email', 'contact'].includes(active_tab) ? active_tab : 'socials';
+        const query = new URLSearchParams({ error: 'Could not update contact details.', tab });
+        res.redirect('/contacts?' + query.toString());
     }
 });
 

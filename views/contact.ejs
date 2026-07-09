@@ -193,14 +193,16 @@
             <% } %>
 
             <div class="tabs-nav">
-                <button class="tab-btn active" data-tab="socials"><i class="fas fa-share-alt"></i> Socials</button>
-                <button class="tab-btn" data-tab="email"><i class="fas fa-envelope"></i> Email Address</button>
-                <button class="tab-btn" data-tab="contact"><i class="fas fa-phone"></i> Contact</button>
+                <button class="tab-btn <% if (typeof tab === 'undefined' || tab === 'socials') { %>active<% } %>" data-tab="socials"><i class="fas fa-share-alt"></i> Socials</button>
+                <button class="tab-btn <% if (tab === 'email') { %>active<% } %>" data-tab="email"><i class="fas fa-envelope"></i> Email Address</button>
+                <button class="tab-btn <% if (tab === 'contact') { %>active<% } %>" data-tab="contact"><i class="fas fa-phone"></i> Contact</button>
             </div>
 
             <form action="/contacts/update" method="POST">
+                <input type="hidden" name="active_tab" id="activeTabInput" value="<% if (typeof tab === 'undefined') { %>socials<% } else { %><%= tab %><% } %>">
+
                 <!-- Socials Tab -->
-                <div id="socials" class="tab-content active">
+                <div id="socials" class="tab-content <% if (typeof tab === 'undefined' || tab === 'socials') { %>active<% } %>">
                     <div class="form-grid">
                         <div class="input-group">
                             <label for="twitter_url">
@@ -228,27 +230,27 @@
                 </div>
 
                 <!-- Email Address Tab -->
-                <div id="email" class="tab-content">
+                <div id="email" class="tab-content <% if (tab === 'email') { %>active<% } %>">
                     <div class="form-grid">
                         <div class="input-group">
                             <label for="email_address">Email Address</label>
-                            <input id="email_address" name="email_address" type="email" placeholder="contact@example.com">
+                            <input id="email_address" name="email_address" type="email" value="<%= settings.email_address || '' %>" placeholder="contact@example.com">
                             <p class="hint">Primary contact email address</p>
                         </div>
                     </div>
                 </div>
 
                 <!-- Contact Tab -->
-                <div id="contact" class="tab-content">
+                <div id="contact" class="tab-content <% if (tab === 'contact') { %>active<% } %>">
                     <div class="form-grid">
                         <div class="input-group">
                             <label for="phone_number">Phone Number</label>
-                            <input id="phone_number" name="phone_number" type="tel" placeholder="(+65) 6123 4567">
+                            <input id="phone_number" name="phone_number" type="tel" value="<%= settings.phone_number || '' %>" placeholder="(+65) 6123 4567">
                             <p class="hint">Primary contact phone number</p>
                         </div>
                         <div class="input-group">
                             <label for="address">Address</label>
-                            <input id="address" name="address" type="text" placeholder="123 Example Avenue, #05-01, Singapore 123456">
+                            <input id="address" name="address" type="text" value="<%= settings.address || '' %>" placeholder="123 Example Avenue, #05-01, Singapore 123456">
                             <p class="hint">Physical office address</p>
                         </div>
                     </div>
@@ -263,17 +265,20 @@
     </main>
 
     <script>
+        const activeTabInput = document.getElementById('activeTabInput');
+
         document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.addEventListener('click', function() {
                 const tabName = this.getAttribute('data-tab');
                 
-                // Remove active class from all tabs and buttons
                 document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
                 document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
                 
-                // Add active class to clicked button and corresponding tab
                 this.classList.add('active');
                 document.getElementById(tabName).classList.add('active');
+                if (activeTabInput) {
+                    activeTabInput.value = tabName;
+                }
             });
         });
     </script>

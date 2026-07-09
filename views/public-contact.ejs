@@ -67,6 +67,26 @@
                     <a href="<%= settings.linkedin_url %>" target="_blank" rel="noopener noreferrer"><i class="fab fa-linkedin"></i> LinkedIn</a>
                 <% } %>
             </div>
+
+            <% if (settings.email_address || settings.phone_number || settings.address || settings.website_url || settings.map_url) { %>
+                <p>
+                    <% if (settings.email_address) { %>
+                        Email: <a href="mailto:<%= settings.email_address %>"><%= settings.email_address %></a><br>
+                    <% } %>
+                    <% if (settings.phone_number) { %>
+                        Phone: <%= settings.phone_number %><br>
+                    <% } %>
+                    <% if (settings.address) { %>
+                        Address: <%= settings.address %><br>
+                    <% } %>
+                    <% if (settings.website_url) { %>
+                        Website: <a href="<%= settings.website_url %>" target="_blank" rel="noopener noreferrer"><%= settings.website_url %></a><br>
+                    <% } %>
+                    <% if (settings.map_url) { %>
+                        Map: <a href="<%= settings.map_url %>" target="_blank" rel="noopener noreferrer">Open map</a>
+                    <% } %>
+                </p>
+            <% } %>
         </div>
     </div>
 </body>
