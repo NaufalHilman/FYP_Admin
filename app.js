@@ -143,6 +143,30 @@ ensureSponsorsTable();
 ensureContactSettingsTable();
 ensureCommunityTables();
 
+async function ensureEnquiriesTable() {
+    try {
+        await db.query(`
+            CREATE TABLE IF NOT EXISTS enquiries (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                full_name VARCHAR(255) NOT NULL,
+                organization VARCHAR(255) DEFAULT '',
+                email VARCHAR(255) NOT NULL,
+                phone VARCHAR(100) DEFAULT '',
+                subject VARCHAR(255) DEFAULT '',
+                message TEXT NOT NULL,
+                source VARCHAR(100) DEFAULT 'support',
+                is_read TINYINT(1) DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        console.log('Enquiries table ready');
+    } catch (err) {
+        console.error('Error ensuring enquiries table:', err.message);
+    }
+}
+
+ensureEnquiriesTable();
+
 async function getContactSettings() {
     const [rows] = await db.query('SELECT * FROM contact_settings ORDER BY id DESC LIMIT 1');
     return rows[0] || {
@@ -253,6 +277,63 @@ app.post('/contacts/update', isAuthenticated, async (req, res) => {
         const tab = active_tab && ['socials', 'email', 'contact'].includes(active_tab) ? active_tab : 'socials';
         const query = new URLSearchParams({ error: 'Could not update contact details.', tab });
         res.redirect('/contacts?' + query.toString());
+    }
+});
+
+// Enquiries (admin view)
+app.get('/enquiries', isAuthenticated, async (req, res) => {
+    try {
+        // Use the Unix timestamp so MySQL driver's local-time conversion cannot shift
+        // an enquiry's received time before it is displayed in Singapore time.
+        const [rows] = await db.query(
+            'SELECT *, UNIX_TIMESTAMP(created_at) AS created_at_epoch FROM enquiries ORDER BY created_at DESC'
+        );
+        res.render('enquiry', { enquiries: rows });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Server Error');
+    }
+});
+
+// Debug route - only when DEBUG_ENQUIRIES=1
+if (process.env.DEBUG_ENQUIRIES === '1') {
+    app.get('/_debug_enquiries_count', isAuthenticated, async (req, res) => {
+        try {
+            const [[{cnt}]] = await db.query('SELECT COUNT(*) as cnt FROM enquiries');
+            res.json({ count: cnt });
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+}
+
+app.post('/enquiries/mark-read/:id', isAuthenticated, async (req, res) => {
+    try {
+        await db.query('UPDATE enquiries SET is_read = 1 WHERE id = ?', [req.params.id]);
+        res.redirect('/enquiries');
+    } catch (err) {
+        console.error(err);
+        res.redirect('/enquiries');
+    }
+});
+
+app.post('/enquiries/mark-unread/:id', isAuthenticated, async (req, res) => {
+    try {
+        await db.query('UPDATE enquiries SET is_read = 0 WHERE id = ?', [req.params.id]);
+        res.redirect('/enquiries');
+    } catch (err) {
+        console.error(err);
+        res.redirect('/enquiries');
+    }
+});
+
+app.post('/enquiries/delete/:id', isAuthenticated, async (req, res) => {
+    try {
+        await db.query('DELETE FROM enquiries WHERE id = ?', [req.params.id]);
+        res.redirect('/enquiries');
+    } catch (err) {
+        console.error(err);
+        res.redirect('/enquiries');
     }
 });
 

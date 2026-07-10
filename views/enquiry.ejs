@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enquiries</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/styles/dashboard.css">
+    <link rel="stylesheet" href="/styles/enquiry.css">
+</head>
+<body>
+    <%- include('../partials/sidebar') %>
+    <%- include('../partials/header') %>
+
+    <main class="content">
+        <% const enquiryList = enquiries || []; %>
+        <% const unreadCount = enquiryList.filter(item => !item.is_read).length; %>
+        <% const singaporeDateTime = new Intl.DateTimeFormat('en-SG', {
+            dateStyle: 'medium',
+            timeStyle: 'short',
+            timeZone: 'Asia/Singapore'
+        }); %>
+
+        <div class="page-header">
+            <div>
+                <p class="eyebrow"><i class="fas fa-inbox"></i> Contact centre</p>
+                <h1>Enquiries</h1>
+                <p class="page-subtitle">Review and respond to messages sent through the website.</p>
+            </div>
+            <div class="search-box">
+                <i class="fa fa-search"></i>
+                <input type="search" id="searchInput" placeholder="Search name, email or subject" oninput="filterTable()" aria-label="Search enquiries">
+            </div>
+        </div>
+
+        <section class="enquiry-summary" aria-label="Enquiry summary">
+            <div class="summary-card summary-card--total">
+                <span class="summary-icon"><i class="fas fa-envelope"></i></span>
+                <div><strong><%= enquiryList.length %></strong><span>Total enquiries</span></div>
+            </div>
+            <div class="summary-card summary-card--unread">
+                <span class="summary-icon"><i class="fas fa-envelope-open-text"></i></span>
+                <div><strong><%= unreadCount %></strong><span>Need review</span></div>
+            </div>
+            <div class="summary-card summary-card--read">
+                <span class="summary-icon"><i class="fas fa-check-circle"></i></span>
+                <div><strong><%= enquiryList.length - unreadCount %></strong><span>Read</span></div>
+            </div>
+        </section>
+
+        <section class="table-section">
+            <div class="table-toolbar">
+                <div>
+                    <h2>Inbox</h2>
+                    <p id="resultCount"><%= enquiryList.length %> <%= enquiryList.length === 1 ? 'enquiry' : 'enquiries' %></p>
+                </div>
+                <div class="inbox-controls">
+                    <label class="filter-control">
+                        <span>Status</span>
+                        <select id="statusFilter" aria-label="Filter enquiries by read status">
+                            <option value="all">All</option>
+                            <option value="unread">Unread</option>
+                            <option value="read">Read</option>
+                        </select>
+                    </label>
+                    <label class="filter-control">
+                        <span>Order</span>
+                        <select id="dateOrder" aria-label="Sort enquiries by received date">
+                            <option value="newest">Newest first</option>
+                            <option value="oldest">Oldest first</option>
+                        </select>
+                    </label>
+                </div>
+                <% if (unreadCount > 0) { %>
+                    <span class="unread-indicator"><span></span><%= unreadCount %> unread</span>
+                <% } %>
+            </div>
+            <table class="admin-table" id="enquiriesTable">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Subject</th>
+                        <th>Message</th>
+                        <th>Received</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% if (enquiryList.length === 0) { %>
+                        <tr><td colspan="7"><div class="empty-state"><i class="fas fa-inbox"></i><strong>Your inbox is clear</strong><span>New website enquiries will appear here.</span></div></td></tr>
+                    <% } %>
+                    <% enquiryList.forEach(item => { %>
+                        <% const receivedAt = new Date(Number(item.created_at_epoch) * 1000); %>
+                        <% const enquiryData = JSON.stringify({
+                            name: item.full_name,
+                            email: item.email,
+                            subject: item.subject || 'No subject',
+                            message: item.message,
+                            received: `${singaporeDateTime.format(receivedAt)} SGT`
+                        }); %>
+                        <tr class="<%= item.is_read ? 'is-read' : 'is-unread' %>" data-status="<%= item.is_read ? 'read' : 'unread' %>" data-timestamp="<%= receivedAt.getTime() %>" data-search="<%= (item.full_name + ' ' + item.email + ' ' + item.subject + ' ' + item.message).toLowerCase() %>">
+                            <td class="status-cell"><% if (!item.is_read) { %><span class="badge-new">New</span><% } else { %><span class="read-status"><i class="fas fa-check"></i></span><% } %></td>
+                            <td><strong class="sender-name"><%= item.full_name %></strong></td>
+                            <td><a href="mailto:<%= item.email %>" class="email-link"><i class="far fa-envelope"></i><%= item.email %></a></td>
+                            <td><span class="subject-line"><%= item.subject || 'No subject' %></span></td>
+                            <td class="message-cell" title="<%= item.message %>"><%= item.message.length > 120 ? item.message.substring(0,120) + '...' : item.message %></td>
+                            <td><time class="received-date" datetime="<%= receivedAt.toISOString() %>"><%= singaporeDateTime.format(receivedAt) %> SGT</time></td>
+                            <td>
+                                <div class="action-group">
+                                <button type="button" class="btn-small btn-view view-enquiry" data-enquiry="<%= enquiryData %>" title="View full enquiry"><i class="fas fa-eye"></i><span>View</span></button>
+                                <% if (!item.is_read) { %>
+                                <form action="/enquiries/mark-read/<%= item.id %>" method="POST" style="display:inline">
+                                    <button class="btn-small btn-read" title="Mark as read"><i class="fas fa-check"></i><span>Mark read</span></button>
+                                </form>
+                                <% } else { %>
+                                <form action="/enquiries/mark-unread/<%= item.id %>" method="POST" style="display:inline">
+                                    <button class="btn-small btn-unread" title="Mark as unread"><i class="fas fa-envelope"></i><span>Mark unread</span></button>
+                                </form>
+                                <% } %>
+                                <form action="/enquiries/delete/<%= item.id %>" method="POST" class="delete-form" data-name="<%= item.full_name %>" style="display:inline">
+                                    <button class="btn-small btn-danger" title="Delete enquiry"><i class="fas fa-trash-alt"></i><span>Delete</span></button>
+                                </form>
+                                </div>
+                            </td>
+                        </tr>
+                    <% }) %>
+                </tbody>
+            </table>
+        </section>
+    </main>
+
+    <div class="detail-overlay" id="enquiryDetailDialog" role="dialog" aria-modal="true" aria-labelledby="enquiryDetailTitle" hidden>
+        <article class="detail-dialog">
+            <header class="detail-header">
+                <div>
+                    <p class="detail-eyebrow"><i class="fas fa-envelope-open-text"></i> Enquiry details</p>
+                    <h2 id="enquiryDetailTitle">Enquiry</h2>
+                </div>
+                <button type="button" class="dialog-close" id="closeEnquiryDetail" aria-label="Close enquiry details"><i class="fas fa-times"></i></button>
+            </header>
+            <div class="detail-meta">
+                <div><span>From</span><strong id="detailName"></strong></div>
+                <div><span>Email</span><a id="detailEmail"></a></div>
+                <div><span>Received</span><time id="detailReceived"></time></div>
+            </div>
+            <section class="detail-message-section">
+                <span>Message</span>
+                <p id="detailMessage" class="detail-message"></p>
+            </section>
+            <footer class="detail-footer">
+                <button type="button" class="btn-close-detail" id="closeEnquiryDetailFooter">Close</button>
+            </footer>
+        </article>
+    </div>
+
+    <div class="confirm-overlay" id="deleteConfirmDialog" role="dialog" aria-modal="true" aria-labelledby="deleteConfirmTitle" hidden>
+        <div class="confirm-dialog">
+            <span class="confirm-icon"><i class="fas fa-trash-alt"></i></span>
+            <h2 id="deleteConfirmTitle">Delete enquiry?</h2>
+            <p id="deleteConfirmMessage">This enquiry will be permanently deleted.</p>
+            <div class="confirm-actions">
+                <button type="button" class="btn-cancel-delete" id="cancelDelete">Cancel</button>
+                <form id="confirmDeleteForm" method="POST">
+                    <button type="submit" class="btn-confirm-delete"><i class="fas fa-trash-alt"></i> Yes, delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function filterTable() {
+            const q = document.getElementById('searchInput').value.toLowerCase();
+            const status = document.getElementById('statusFilter').value;
+            const dateOrder = document.getElementById('dateOrder').value;
+            const tbody = document.querySelector('#enquiriesTable tbody');
+            const rows = Array.from(tbody.querySelectorAll('tr[data-search]'));
+            let visible = 0;
+            rows.sort((a, b) => {
+                const difference = Number(b.dataset.timestamp) - Number(a.dataset.timestamp);
+                return dateOrder === 'newest' ? difference : -difference;
+            }).forEach(tr => tbody.appendChild(tr));
+
+            rows.forEach(tr => {
+                const s = tr.dataset.search || '';
+                const show = s.includes(q) && (status === 'all' || tr.dataset.status === status);
+                tr.style.display = show ? '' : 'none';
+                if (show) visible++;
+            });
+            const resultCount = document.getElementById('resultCount');
+            if (resultCount) resultCount.textContent = `${visible} ${visible === 1 ? 'enquiry' : 'enquiries'}`;
+        }
+
+        document.getElementById('statusFilter').addEventListener('change', filterTable);
+        document.getElementById('dateOrder').addEventListener('change', filterTable);
+
+        const deleteDialog = document.getElementById('deleteConfirmDialog');
+        const confirmDeleteForm = document.getElementById('confirmDeleteForm');
+        const cancelDelete = document.getElementById('cancelDelete');
+
+        document.querySelectorAll('.delete-form').forEach(form => {
+            form.addEventListener('submit', event => {
+                event.preventDefault();
+                document.getElementById('deleteConfirmMessage').textContent = `Delete the enquiry from ${form.dataset.name}? This cannot be undone.`;
+                confirmDeleteForm.action = form.action;
+                deleteDialog.hidden = false;
+                cancelDelete.focus();
+            });
+        });
+
+        function closeDeleteDialog() {
+            deleteDialog.hidden = true;
+            confirmDeleteForm.action = '';
+        }
+
+        cancelDelete.addEventListener('click', closeDeleteDialog);
+        deleteDialog.addEventListener('click', event => {
+            if (event.target === deleteDialog) closeDeleteDialog();
+        });
+        document.addEventListener('keydown', event => {
+            if (event.key === 'Escape' && !deleteDialog.hidden) closeDeleteDialog();
+        });
+
+        const enquiryDetailDialog = document.getElementById('enquiryDetailDialog');
+        const closeEnquiryDetail = document.getElementById('closeEnquiryDetail');
+
+        document.querySelectorAll('.view-enquiry').forEach(button => {
+            button.addEventListener('click', () => {
+                const enquiry = JSON.parse(button.dataset.enquiry);
+                document.getElementById('enquiryDetailTitle').textContent = enquiry.subject;
+                document.getElementById('detailName').textContent = enquiry.name;
+                const email = document.getElementById('detailEmail');
+                email.textContent = enquiry.email;
+                email.href = `mailto:${enquiry.email}`;
+                document.getElementById('detailReceived').textContent = enquiry.received;
+                document.getElementById('detailMessage').textContent = enquiry.message;
+                enquiryDetailDialog.hidden = false;
+                closeEnquiryDetail.focus();
+            });
+        });
+
+        function closeEnquiryDetails() { enquiryDetailDialog.hidden = true; }
+        closeEnquiryDetail.addEventListener('click', closeEnquiryDetails);
+        document.getElementById('closeEnquiryDetailFooter').addEventListener('click', closeEnquiryDetails);
+        enquiryDetailDialog.addEventListener('click', event => {
+            if (event.target === enquiryDetailDialog) closeEnquiryDetails();
+        });
+        document.addEventListener('keydown', event => {
+            if (event.key === 'Escape' && !enquiryDetailDialog.hidden) closeEnquiryDetails();
+        });
+    </script>
+</body>
+</html>
