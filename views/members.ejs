@@ -95,7 +95,7 @@
                             <% } %>
                         </td>
                         <td><code class="member-id-chip"><%= m.member_id || '—' %></code></td>
-                        <td><%= m.title ? m.title + ' ' : '' %><%= m.full_name %></td>
+                        <td><%= m.title ? m.title + ' ' : '' %><%= m.full_name %><% if (m.membership_tier) { %><span class="app-tier-badge"><%= m.membership_tier %></span><% } %></td>
                         <td><%= m.company || '—' %></td>
                         <td><%= vt ? vt.toLocaleDateString('en-SG', { year:'numeric', month:'short', day:'numeric' }) : '—' %></td>
                         <td class="actions-cell">
@@ -306,6 +306,7 @@
                             <h4 class="applicant-name">
                                 <%= app.title ? app.title + ' ' : '' %><%= app.full_name %>
                                 <span class="app-type-badge"><%= app.membership_type %></span>
+                                <% if (app.membership_tier) { %><span class="app-tier-badge"><%= app.membership_tier %></span><% } %>
                             </h4>
                             <p class="applicant-contact">
                                 <i class="fas fa-envelope"></i> <%= app.personal_email %>
@@ -379,6 +380,15 @@
                     <input type="text" name="full_name" required>
                     <label>Company / Hotel</label>
                     <input type="text" name="company">
+                    <label>Membership Tier</label>
+                    <select name="membership_tier">
+                        <option value="">— Select tier —</option>
+                        <option>Ordinary</option>
+                        <option>Associate</option>
+                        <option>Junior</option>
+                        <option>Corporate</option>
+                        <option>Honorary</option>
+                    </select>
                     <label>Valid Till</label>
                     <input type="date" name="valid_till">
                     <label>Photo</label>
@@ -409,6 +419,15 @@
                     <input type="text" name="full_name" id="edit-member-name" required>
                     <label>Company / Hotel</label>
                     <input type="text" name="company" id="edit-member-company">
+                    <label>Membership Tier</label>
+                    <select name="membership_tier" id="edit-member-tier">
+                        <option value="">— Select tier —</option>
+                        <option>Ordinary</option>
+                        <option>Associate</option>
+                        <option>Junior</option>
+                        <option>Corporate</option>
+                        <option>Honorary</option>
+                    </select>
                     <label>Valid Till</label>
                     <input type="date" name="valid_till" id="edit-member-valid">
                     <div id="edit-member-photo-preview" class="current-photo-preview" style="display:none;">
@@ -635,6 +654,7 @@
             document.getElementById('edit-member-title').value = m.title || '';
             document.getElementById('edit-member-name').value = m.full_name;
             document.getElementById('edit-member-company').value = m.company || '';
+            document.getElementById('edit-member-tier').value = m.membership_tier || '';
             document.getElementById('edit-member-valid').value = m.valid_till ? m.valid_till.split('T')[0] : '';
             document.getElementById('editMemberForm').action = '/members/update/' + m.id;
 

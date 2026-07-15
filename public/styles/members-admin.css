@@ -558,6 +558,16 @@
     color: #444;
 }
 
+.app-tier-badge {
+    font-size: .75rem;
+    background: #27247B;
+    color: #fff;
+    padding: 2px 8px;
+    border-radius: 12px;
+    margin-left: .35rem;
+    font-weight: 600;
+}
+
 .applicant-contact {
     margin: .25rem 0 0;
     font-size: .85rem;

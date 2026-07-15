@@ -679,9 +679,9 @@ app.post('/membership/accept/:id', isAuthenticated, async (req, res) => {
             // Update the members table with latest details + refresh valid_till
             await db.query(
                 `UPDATE members SET
-                    title = ?, full_name = ?, company = ?, valid_till = ?
+                    title = ?, full_name = ?, company = ?, valid_till = ?, membership_tier = ?
                  WHERE member_id = ?`,
-                [application.title || null, application.full_name, application.hotel_name || null, validTillStr, existing]
+                [application.title || null, application.full_name, application.hotel_name || null, validTillStr, application.membership_tier || null, existing]
             );
 
             // Overwrite the original application record with renewed details (audit)
@@ -726,8 +726,8 @@ app.post('/membership/accept/:id', isAuthenticated, async (req, res) => {
 
         // Auto-create the members row
         await db.query(
-            'INSERT INTO members (title, full_name, company, valid_till, member_id) VALUES (?, ?, ?, ?, ?)',
-            [application.title || null, application.full_name, application.hotel_name || null, validTillStr, newId]
+            'INSERT INTO members (title, full_name, company, valid_till, member_id, membership_tier) VALUES (?, ?, ?, ?, ?, ?)',
+            [application.title || null, application.full_name, application.hotel_name || null, validTillStr, newId, application.membership_tier || null]
         );
 
         res.redirect('/members?tab=applications&notice=' + encodeURIComponent(
@@ -771,13 +771,13 @@ app.post('/membership/delete/:id', isAuthenticated, async (req, res) => {
    REGULAR MEMBERS — CRUD
 ===================================================== */
 app.post('/members/create', isAuthenticated, uploadMemberPhoto.single('image'), async (req, res) => {
-    const { title, full_name, company, valid_till } = req.body;
+    const { title, full_name, company, valid_till, membership_tier } = req.body;
     const image_path = req.file ? req.file.path : null;
     try {
         const memberId = await generateMemberId();
         await db.query(
-            'INSERT INTO members (full_name, company, valid_till, member_id, image_path, title) VALUES (?, ?, ?, ?, ?, ?)',
-            [full_name, company || null, valid_till || null, memberId, image_path, title || null]
+            'INSERT INTO members (full_name, company, valid_till, member_id, image_path, title, membership_tier) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [full_name, company || null, valid_till || null, memberId, image_path, title || null, membership_tier || null]
         );
         res.redirect('/members?notice=' + encodeURIComponent(`Member added. ID: ${memberId}`));
     } catch (err) {
@@ -787,17 +787,17 @@ app.post('/members/create', isAuthenticated, uploadMemberPhoto.single('image'), 
 });
 
 app.post('/members/update/:id', isAuthenticated, uploadMemberPhoto.single('image'), async (req, res) => {
-    const { title, full_name, company, valid_till } = req.body;
+    const { title, full_name, company, valid_till, membership_tier } = req.body;
     try {
         if (req.file) {
             await db.query(
-                'UPDATE members SET title=?, full_name=?, company=?, valid_till=?, image_path=? WHERE id=?',
-                [title || null, full_name, company, valid_till, req.file.path, req.params.id]
+                'UPDATE members SET title=?, full_name=?, company=?, valid_till=?, image_path=?, membership_tier=? WHERE id=?',
+                [title || null, full_name, company, valid_till, req.file.path, membership_tier || null, req.params.id]
             );
         } else {
             await db.query(
-                'UPDATE members SET title=?, full_name=?, company=?, valid_till=? WHERE id=?',
-                [title || null, full_name, company, valid_till, req.params.id]
+                'UPDATE members SET title=?, full_name=?, company=?, valid_till=?, membership_tier=? WHERE id=?',
+                [title || null, full_name, company, valid_till, membership_tier || null, req.params.id]
             );
         }
         res.redirect('/members');
