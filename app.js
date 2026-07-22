@@ -1231,11 +1231,13 @@ app.get('/community', isAuthenticated, async (req, res) => {
 });
 
 app.post('/community/create', isAuthenticated, uploadImage.array('images', 10), async (req, res) => {
-    const { title, short_description, full_description, display_order } = req.body;
+    const { title, short_description, full_description } = req.body;
     try {
+        // Keep the latest admin addition at the front of the public story carousel.
+        await db.query('UPDATE community_entries SET display_order = display_order + 1');
         const [result] = await db.query(
             'INSERT INTO community_entries (title, short_description, full_description, display_order) VALUES (?, ?, ?, ?)',
-            [title, short_description || null, full_description || null, display_order || 0]
+            [title, short_description || null, full_description || null, 1]
         );
 
         if (req.files && req.files.length > 0) {

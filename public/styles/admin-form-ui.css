@@ -1,0 +1,216 @@
+/* Shared Admin Panel modal and form presentation. */
+:root {
+  --admin-primary: #27ae60;
+  --admin-primary-hover: #1e8449;
+  --admin-ink: #222;
+  --admin-muted: #555;
+  --admin-border: #ddd;
+  --admin-surface: #fff;
+  --admin-radius: 10px;
+}
+
+.modal-overlay .modal,
+.award-modal-overlay .award-modal,
+.edit-modal-overlay .edit-modal {
+  width: min(540px, calc(100vw - 32px));
+  max-height: min(90vh, 760px);
+  padding: 32px;
+  border-radius: 12px;
+  box-shadow: 0 18px 48px rgba(39, 36, 123, 0.18);
+}
+
+.modal-overlay .modal.modal--wide {
+  width: min(680px, calc(100vw - 32px));
+}
+
+.modal :is(h3),
+.award-modal h3,
+.edit-modal h3 {
+  margin: 0 0 20px;
+  color: var(--admin-ink);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.modal > form,
+.award-modal > form,
+.edit-modal > form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.modal label:not(.checkbox-row):not(.checkbox-label):not(.img-placeholder):not(.btn-upload-label):not(.file-label):not(.upload-images-button),
+.award-modal label:not(.checkbox-row):not(.checkbox-label):not(.img-placeholder):not(.btn-upload-label):not(.file-label):not(.upload-images-button),
+.edit-modal label:not(.checkbox-row):not(.checkbox-label):not(.img-placeholder):not(.btn-upload-label):not(.file-label):not(.upload-images-button),
+.settings-card .input-group label,
+.page-card .input-group label {
+  display: block;
+  margin: 0 0 6px;
+  color: var(--admin-ink);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.modal :is(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), select, textarea),
+.award-modal :is(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), select, textarea),
+.edit-modal :is(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), select, textarea),
+.settings-card .input-group input,
+.page-card .input-group input {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 42px;
+  padding: 9px 12px;
+  border: 1px solid var(--admin-border);
+  border-radius: 6px;
+  background: var(--admin-surface);
+  color: #333;
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.modal textarea,
+.award-modal textarea,
+.edit-modal textarea {
+  min-height: 108px;
+  resize: vertical;
+}
+
+.modal :is(input, select, textarea):focus,
+.award-modal :is(input, select, textarea):focus,
+.edit-modal :is(input, select, textarea):focus,
+.settings-card .input-group input:focus,
+.page-card .input-group input:focus {
+  border-color: #27247B;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(39, 36, 123, 0.1);
+}
+
+.modal-row,
+.award-modal-row {
+  gap: 14px;
+}
+
+.modal-actions,
+.award-modal-footer,
+.edit-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 8px;
+  padding-top: 4px;
+}
+
+.modal-actions :is(.btn-update, .btn-add),
+.award-modal-footer .btn-add,
+.edit-modal-footer .btn-save {
+  min-height: 40px;
+  padding: 9px 18px;
+  border: 1px solid var(--admin-primary);
+  border-radius: 6px;
+  background: var(--admin-primary);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.modal-actions :is(.btn-update, .btn-add):hover,
+.award-modal-footer .btn-add:hover,
+.edit-modal-footer .btn-save:hover {
+  background: var(--admin-primary-hover);
+  border-color: var(--admin-primary-hover);
+}
+
+.modal-actions .btn-cancel,
+.award-modal-footer .btn-app-delete,
+.edit-modal-footer .btn-cancel-modal {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 9px 18px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background: #fff;
+  color: var(--admin-muted);
+  font-size: 13px;
+  line-height: 1;
+  text-decoration: none;
+}
+
+.modal :is(.btn-upload-label, .file-label, .upload-images-button),
+.award-modal .btn-upload-label,
+.edit-modal .btn-upload-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 9px 14px;
+  border: 1px dashed #ccc;
+  border-radius: 6px;
+  background: #f8f9fc;
+  color: var(--admin-muted);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.modal :is(.btn-upload-label, .file-label, .upload-images-button):hover,
+.award-modal .btn-upload-label:hover,
+.edit-modal .btn-upload-label:hover {
+  border-color: #27247B;
+  color: #27247B;
+}
+
+.modal .img-preview-wrap,
+.award-modal .img-preview-wrap,
+.edit-modal .img-preview-wrap {
+  margin-top: 0;
+}
+
+.modal .img-preview-wrap img,
+.award-modal .img-preview-wrap img,
+.edit-modal .img-preview-wrap img,
+.modal .upload-preview img {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+.settings-card .input-group,
+.page-card .input-group {
+  margin-bottom: 16px;
+}
+
+.settings-card .btn-primary,
+.settings-card .btn-secondary,
+.page-card .btn-primary,
+.page-card .btn-secondary {
+  min-height: 40px;
+  padding: 9px 18px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+@media (max-width: 600px) {
+  .modal-overlay .modal,
+  .award-modal-overlay .award-modal,
+  .edit-modal-overlay .edit-modal {
+    width: calc(100vw - 24px);
+    padding: 24px 20px;
+  }
+
+  .modal-row,
+  .award-modal-row {
+    grid-template-columns: 1fr;
+    flex-direction: column;
+  }
+}
