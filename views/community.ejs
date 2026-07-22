@@ -6,6 +6,8 @@
     <title>Community Management</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/styles/careers.css">
+    <link rel="stylesheet" href="/styles/upload-preview.css">
+    <script src="/scripts/upload-preview.js" defer></script>
     <style>
         .page-subtitle { font-size: 13px; color: #888; margin-top: 4px; }
         .community-card textarea { min-height: 90px; resize: vertical; }
@@ -93,6 +95,12 @@
         }
         .alert-error { color: #b91c1c; background: #fef2f2; }
         .alert-notice { color: #166534; background: #ecfdf5; }
+        .upload-images-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -171,7 +179,7 @@
                             <label class="img-placeholder">
                                 <i class="fa fa-upload"></i>
                                 <span>Add Images</span>
-                                <input type="file" name="images" accept="image/*" multiple hidden onchange="previewFirstImage(this, 'add-preview-<%= entry.id %>')">
+                                <input type="file" name="images" accept="image/*" multiple hidden>
                             </label>
                         </div>
 
@@ -225,20 +233,12 @@
                     <label>Full Description</label>
                     <textarea name="full_description" rows="5"></textarea>
 
-                    <label>Display Order</label>
-                    <input type="number" name="display_order" value="0">
-
                     <label>Images</label>
-                    <div class="img-row">
-                        <div class="img-thumb">
-                            <img id="new-preview" src="/images/placeholder.jpg" alt="">
-                        </div>
-                        <label class="img-placeholder">
-                            <i class="fa fa-upload"></i>
-                            <span>Choose Images</span>
-                            <input type="file" name="images" accept="image/*" multiple hidden onchange="previewFirstImage(this, 'new-preview')">
-                        </label>
-                    </div>
+                    <label class="btn-update upload-images-button">
+                        <i class="fa fa-upload"></i>
+                        <span>Upload Images</span>
+                        <input type="file" name="images" accept="image/*" multiple hidden>
+                    </label>
 
                     <div class="modal-actions">
                         <button type="button" class="btn-cancel" onclick="closeModal()">Cancel</button>
@@ -250,16 +250,6 @@
     </main>
 
     <script>
-        function previewFirstImage(input, previewId) {
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = e => {
-                    document.getElementById(previewId).src = e.target.result;
-                };
-                reader.readAsDataURL(input.files[0]);
-            }
-        }
-
         function openModal() {
             document.getElementById('createModal').style.display = 'flex';
         }

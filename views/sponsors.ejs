@@ -6,6 +6,8 @@
     <title>Sponsors & Partnerships</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/styles/careers.css">
+    <link rel="stylesheet" href="/styles/upload-preview.css">
+    <script src="/scripts/upload-preview.js" defer></script>
     <style>
         .page-subtitle {
             font-size: 13px;
@@ -320,7 +322,7 @@
                         <label class="btn-upload-label">
                             <i class="fa fa-upload"></i>
                             <span>Choose Logo</span>
-                            <input type="file" name="image" accept="image/*" hidden onchange="previewImage(this, 'new-sponsor-preview')">
+                            <input type="file" name="image" accept="image/*" hidden>
                         </label>
                     </div>
 
@@ -334,16 +336,6 @@
     </main>
 
     <script>
-        function previewImage(input, previewId) {
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = e => {
-                    document.getElementById(previewId).src = e.target.result;
-                };
-                reader.readAsDataURL(input.files[0]);
-            }
-        }
-
         function openCreateModal() {
             document.getElementById('createModal').style.display = 'flex';
         }

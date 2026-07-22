@@ -7,6 +7,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/styles/careers.css">
     <link rel="stylesheet" href="/styles/members-admin.css">
+    <link rel="stylesheet" href="/styles/upload-preview.css">
+    <script src="/scripts/upload-preview.js" defer></script>
     <style>
         /* ── Stats strip ─────────────────────────────── */
         .awards-stats {
@@ -348,7 +350,7 @@
                     <img id="create-preview" src="/images/placeholder.jpg" alt="Preview">
                     <label class="btn-upload-label">
                         <i class="fas fa-upload"></i> Upload Image
-                        <input type="file" name="image" accept="image/*" hidden onchange="previewImage(this,'create-preview')">
+                        <input type="file" name="image" accept="image/*" hidden>
                     </label>
                 </div>
 
@@ -387,7 +389,7 @@
                     <img id="edit-preview" src="/images/placeholder.jpg" alt="Preview">
                     <label class="btn-upload-label">
                         <i class="fas fa-upload"></i> Replace Image
-                        <input type="file" name="image" accept="image/*" hidden onchange="previewImage(this,'edit-preview')">
+                        <input type="file" name="image" accept="image/*" hidden>
                     </label>
                 </div>
 
@@ -400,13 +402,6 @@
     </div>
 
     <script>
-        function previewImage(input, id) {
-            if (!input.files[0]) return;
-            const r = new FileReader();
-            r.onload = e => document.getElementById(id).src = e.target.result;
-            r.readAsDataURL(input.files[0]);
-        }
-
         function openCreate() {
             document.getElementById('createModal').classList.add('open');
             document.body.style.overflow = 'hidden';

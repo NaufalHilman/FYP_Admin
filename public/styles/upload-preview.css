@@ -1,0 +1,33 @@
+/* Image upload previews are only displayed when an image is available. */
+.img-preview-wrap.upload-preview--empty {
+  display: block;
+  margin-top: 0;
+}
+
+.img-preview-wrap.upload-preview--empty img {
+  display: none;
+}
+
+.img-thumb.upload-preview--empty {
+  display: none;
+}
+
+.upload-preview {
+  display: none;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.upload-preview.is-visible {
+  display: flex;
+}
+
+.upload-preview img {
+  display: block;
+  width: 72px;
+  height: 72px;
+  max-width: 100%;
+  object-fit: contain;
+  border: 1px solid #eee;
+  border-radius: 8px;
+}
