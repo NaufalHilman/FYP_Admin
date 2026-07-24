@@ -198,7 +198,7 @@ app.post('/login', async (req, res) => {
         const admin = rows[0];
         const isMatch = await bcrypt.compare(password, admin.password);
         if (isMatch) {
-            req.session.admin = admin;
+            req.session.admin = { id: admin.id, username: admin.username };
             res.redirect('/dashboard');
         } else {
             res.render('login', { error: 'Incorrect username or password' });
